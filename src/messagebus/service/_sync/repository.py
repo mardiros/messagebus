@@ -9,7 +9,7 @@ storage.
 
 import abc
 from collections.abc import MutableSequence
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 from messagebus.domain.model import GenericModel, Message
 from messagebus.service._sync.eventstream import SyncEventstreamPublisher
@@ -27,7 +27,7 @@ class SyncAbstractRepository(abc.ABC, Generic[TModel_contra]):
 
 
 class SyncEventstoreAbstractRepository(abc.ABC):
-    def __init__(self, publisher: Optional[SyncEventstreamPublisher] = None) -> None:
+    def __init__(self, publisher: SyncEventstreamPublisher | None = None) -> None:
         self.publisher = publisher
         self.stream_buffer: MutableSequence[Message[Any]] = []
 

@@ -1,9 +1,8 @@
 import enum
 from collections.abc import AsyncIterator, Mapping, MutableMapping, MutableSequence
+from types import EllipsisType
 from typing import (
     Any,
-    Optional,
-    Union,
 )
 
 import pytest
@@ -30,12 +29,6 @@ from messagebus.service._async.unit_of_work import (
     AsyncAbstractUnitOfWork,
     AsyncUnitOfWorkTransaction,
 )
-
-try:
-    # does not exists in python 3.7
-    from types import EllipsisType  # type:ignore
-except ImportError:
-    EllipsisType = Any  # type:ignore
 
 
 class MyMetadata(Metadata):
@@ -80,7 +73,7 @@ class AsyncDummyRepository(AsyncAbstractRepository[DummyModel]):
 class AsyncFooRepository(AsyncDummyRepository): ...
 
 
-Repositories = Union[AsyncDummyRepository, AsyncFooRepository]
+Repositories = AsyncDummyRepository | AsyncFooRepository
 
 
 class AsyncDummyUnitOfWork(AsyncAbstractUnitOfWork[Repositories]):
@@ -110,7 +103,7 @@ class AsyncEventstreamTransport(AsyncAbstractEventstreamTransport):
 class AsyncDummyEventStore(AsyncEventstoreAbstractRepository):
     messages: MutableSequence[Message[MyMetadata]]
 
-    def __init__(self, publisher: Optional[AsyncEventstreamPublisher]):
+    def __init__(self, publisher: AsyncEventstreamPublisher | None):
         super().__init__(publisher=publisher)
         self.messages = []
 
@@ -119,7 +112,7 @@ class AsyncDummyEventStore(AsyncEventstoreAbstractRepository):
 
 
 class AsyncDummyUnitOfWorkWithEvents(AsyncAbstractUnitOfWork[Repositories]):
-    def __init__(self, publisher: Optional[AsyncEventstreamPublisher]) -> None:
+    def __init__(self, publisher: AsyncEventstreamPublisher | None) -> None:
         self.foos = AsyncFooRepository()
         self.bars = AsyncDummyRepository()
         self.eventstore = AsyncDummyEventStore(publisher=publisher)

@@ -45,9 +45,9 @@ def test_messagebus(
 
     foo = listen_command(DummyCommand(id="foo"), tuow)
     assert list(tuow.uow.collect_new_events()) == [DummyEvent(id="foo", increment=10)]
-    assert (
-        DummyModel.counter == 0
-    ), "Events raised cannot be played before the attach_listener has been called"
+    assert DummyModel.counter == 0, (
+        "Events raised cannot be played before the attach_listener has been called"
+    )
 
     listen_event(DummyEvent(id="foo", increment=1), tuow)
     assert foo.counter == 1
@@ -67,9 +67,9 @@ def test_messagebus(
     bus.remove_listener(DummyEvent, listen_event)
 
     foo = bus.handle(DummyCommand(id="foo4"), tuow)
-    assert (
-        foo.counter == 0
-    ), "The command should raise an event that is not handled anymore "
+    assert foo.counter == 0, (
+        "The command should raise an event that is not handled anymore "
+    )
 
 
 def test_messagebus_handle_only_message(

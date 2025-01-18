@@ -1,9 +1,8 @@
 import enum
 from collections.abc import Iterator, Mapping, MutableMapping, MutableSequence
+from types import EllipsisType
 from typing import (
     Any,
-    Optional,
-    Union,
 )
 
 import pytest
@@ -30,12 +29,6 @@ from messagebus.service._sync.unit_of_work import (
     SyncAbstractUnitOfWork,
     SyncUnitOfWorkTransaction,
 )
-
-try:
-    # does not exists in python 3.7
-    from types import EllipsisType  # type:ignore
-except ImportError:
-    EllipsisType = Any  # type:ignore
 
 
 class MyMetadata(Metadata):
@@ -80,7 +73,7 @@ class SyncDummyRepository(SyncAbstractRepository[DummyModel]):
 class SyncFooRepository(SyncDummyRepository): ...
 
 
-Repositories = Union[SyncDummyRepository, SyncFooRepository]
+Repositories = SyncDummyRepository | SyncFooRepository
 
 
 class SyncDummyUnitOfWork(SyncAbstractUnitOfWork[Repositories]):
@@ -110,7 +103,7 @@ class SyncEventstreamTransport(SyncAbstractEventstreamTransport):
 class SyncDummyEventStore(SyncEventstoreAbstractRepository):
     messages: MutableSequence[Message[MyMetadata]]
 
-    def __init__(self, publisher: Optional[SyncEventstreamPublisher]):
+    def __init__(self, publisher: SyncEventstreamPublisher | None):
         super().__init__(publisher=publisher)
         self.messages = []
 
@@ -119,7 +112,7 @@ class SyncDummyEventStore(SyncEventstoreAbstractRepository):
 
 
 class SyncDummyUnitOfWorkWithEvents(SyncAbstractUnitOfWork[Repositories]):
-    def __init__(self, publisher: Optional[SyncEventstreamPublisher]) -> None:
+    def __init__(self, publisher: SyncEventstreamPublisher | None) -> None:
         self.foos = SyncFooRepository()
         self.bars = SyncDummyRepository()
         self.eventstore = SyncDummyEventStore(publisher=publisher)

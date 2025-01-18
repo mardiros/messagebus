@@ -129,6 +129,11 @@ class DummyCommand(GenericCommand[MyMetadata]):
     )
 
 
+class AnotherDummyCommand(GenericCommand[MyMetadata]):
+    id: str = Field(...)
+    metadata: MyMetadata = MyMetadata(name="dummy2", schema_version=1, custom_field="f")
+
+
 class DummyEvent(GenericEvent[MyMetadata]):
     id: str = Field(...)
     increment: int = Field(...)

@@ -1,3 +1,4 @@
+import functools
 from typing import Any
 
 import pytest
@@ -10,6 +11,7 @@ from tests._sync.conftest import (
     Repositories,
     SyncUnitOfWorkTransaction,
 )
+from tests._sync.handlers import dummy
 
 conftest_mod = __name__.replace("test_registry", "conftest")
 
@@ -147,7 +149,6 @@ def test_scan(bus: SyncMessageBus[Any]):
     assert bus.commands_registry == {}
     assert bus.events_registry == {}
     bus.scan("tests._sync.handlers")
-    from tests._sync.handlers import dummy
 
     assert DummyCommand in bus.commands_registry
     assert bus.commands_registry[DummyCommand] == dummy.handler
@@ -162,4 +163,40 @@ def test_scan_relative(bus: SyncMessageBus[Any]):
     assert (
         str(ctx.value)
         == "scan error: relative package unsupported for ._async.handlers"
+    )
+
+
+def listen_command_with_dependency(
+    cmd: DummyCommand,
+    uow: SyncUnitOfWorkTransaction[Repositories],
+    dummy_dict: dict[str, str],
+) -> DummyModel:
+    """This command raise an event played by the message bus."""
+    foo = DummyModel(id=cmd.id, counter=0)
+    dummy_dict["foo"] = "bar"
+    return foo
+
+
+def test_messagebus_dependency(
+    uow: SyncUnitOfWorkTransaction[Repositories],
+):
+    d: dict[str, str] = {}
+    bus = SyncMessageBus[Repositories](dummy_dict=d)
+    bus.add_listener(DummyCommand, listen_command_with_dependency)
+    assert isinstance(bus.commands_registry[DummyCommand], functools.partial)
+    assert (
+        bus.commands_registry[DummyCommand].keywords  # type: ignore
+        == {"dummy_dict": d}
+    )
+
+
+def test_messagebus_dependency_error_missing_deps(
+    uow: SyncUnitOfWorkTransaction[Repositories],
+):
+    bus = SyncMessageBus[Repositories]()
+    with pytest.raises(ConfigurationError) as ctx:
+        bus.add_listener(DummyCommand, listen_command_with_dependency)
+    assert (
+        str(ctx.value) == "Missing dependency in message bus: dummy_dict for "
+        "command type DummyCommand, listener: listen_command_with_dependency"
     )

@@ -3,6 +3,7 @@ from collections.abc import AsyncIterator, Mapping, MutableMapping, MutableSeque
 from types import EllipsisType
 from typing import (
     Any,
+    ClassVar,
 )
 
 import pytest
@@ -43,6 +44,13 @@ class DummyError(enum.Enum):
 class DummyModel(GenericModel[MyMetadata]):
     id: str = Field()
     counter: int = Field(0)
+
+
+class Notifier:
+    inbox: ClassVar[list[str]] = []
+
+    def send_message(self, message: str):
+        self.inbox.append(message)
 
 
 DummyRepositoryOperationResult = Result[EllipsisType, DummyError]
@@ -199,8 +207,13 @@ async def uow_with_eventstore(
 
 
 @pytest.fixture
-def bus() -> AsyncMessageBus[Repositories]:
-    return AsyncMessageBus()
+def notifier():
+    return Notifier()
+
+
+@pytest.fixture
+def bus(notifier: Notifier) -> AsyncMessageBus[Repositories]:
+    return AsyncMessageBus(notifier=notifier)
 
 
 @pytest.fixture

@@ -1,15 +1,13 @@
-from typing import Any, ClassVar
+from typing import Any
 
 from messagebus.service._sync.registry import sync_listen
 from messagebus.service._sync.unit_of_work import SyncAbstractUnitOfWork
-from tests._sync.conftest import AnotherDummyCommand, DummyCommand, DummyEvent
-
-
-class Notifier:
-    inbox: ClassVar[list[str]] = []
-
-    def send_message(self, message: str):
-        self.inbox.append(message)
+from tests._sync.conftest import (
+    AnotherDummyCommand,
+    DummyCommand,
+    DummyEvent,
+    Notifier,
+)
 
 
 @sync_listen

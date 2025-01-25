@@ -1,15 +1,13 @@
-from typing import Any, ClassVar
+from typing import Any
 
 from messagebus.service._async.registry import async_listen
 from messagebus.service._async.unit_of_work import AsyncAbstractUnitOfWork
-from tests._async.conftest import AnotherDummyCommand, DummyCommand, DummyEvent
-
-
-class Notifier:
-    inbox: ClassVar[list[str]] = []
-
-    def send_message(self, message: str):
-        self.inbox.append(message)
+from tests._async.conftest import (
+    AnotherDummyCommand,
+    DummyCommand,
+    DummyEvent,
+    Notifier,
+)
 
 
 @async_listen

@@ -1,3 +1,7 @@
+0.8.0  - Released on 2025-02-01
+-------------------------------
+* Starts implementing depencencies injected in event handlers 
+
 0.7.0  - Released on 2024-11-28
 -------------------------------
 * Always exclude messages while dumping models 

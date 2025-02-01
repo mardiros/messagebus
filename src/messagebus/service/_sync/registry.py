@@ -7,12 +7,13 @@ import importlib
 import inspect
 import logging
 from collections import defaultdict
+from functools import partial
 from typing import Any, Generic, cast
 
 import venusian  # type: ignore
 
 from messagebus.domain.model import GenericCommand, GenericEvent, Message
-from messagebus.typing import SyncMessageHandler, TMessage, TSyncUow
+from messagebus.typing import P, SyncMessageHandler, TMessage, TSyncUow
 
 from .unit_of_work import SyncUnitOfWorkTransaction, TRepositories
 
@@ -25,8 +26,8 @@ class ConfigurationError(RuntimeError):
 
 
 def sync_listen(
-    wrapped: SyncMessageHandler[TMessage, TSyncUow],
-) -> SyncMessageHandler[TMessage, TSyncUow]:
+    wrapped: SyncMessageHandler[TMessage, TSyncUow, P],
+) -> SyncMessageHandler[TMessage, TSyncUow, P]:
     """
     Decorator to listen for a command or an event.
 
@@ -37,7 +38,7 @@ def sync_listen(
     def callback(
         scanner: venusian.Scanner,
         name: str,
-        ob: SyncMessageHandler[TMessage, TSyncUow],
+        ob: SyncMessageHandler[TMessage, TSyncUow, P],
     ) -> None:
         if not hasattr(scanner, VENUSIAN_CATEGORY):
             return  # coverage: ignore
@@ -52,17 +53,32 @@ def sync_listen(
 class SyncMessageBus(Generic[TRepositories]):
     """Store all the handlers for commands an events."""
 
-    def __init__(self) -> None:
+    def __init__(self, **dependencies: Any) -> None:
         self.commands_registry: dict[
-            type[GenericCommand[Any]], SyncMessageHandler[GenericCommand[Any], Any]
+            type[GenericCommand[Any]],
+            SyncMessageHandler[GenericCommand[Any], Any, ...],
         ] = {}
         self.events_registry: dict[
-            type[GenericEvent[Any]], list[SyncMessageHandler[GenericEvent[Any], Any]]
+            type[GenericEvent[Any]],
+            list[SyncMessageHandler[GenericEvent[Any], Any, ...]],
         ] = defaultdict(list)
+        self.depencencies = dependencies or {}
 
     def add_listener(
-        self, msg_type: type[Message[Any]], callback: SyncMessageHandler[Any, Any]
+        self, msg_type: type[Message[Any]], callback: SyncMessageHandler[Any, Any, P]
     ) -> None:
+        signature = inspect.signature(callback)
+        kwargs = {}
+        for idx, key in enumerate(signature.parameters):
+            if idx >= 2:
+                if key not in self.depencencies:
+                    raise ConfigurationError(
+                        f"Missing dependency in message bus: {key} for command "
+                        f"type {msg_type.__name__}, listener: {callback.__name__}"
+                    )
+                kwargs[key] = self.depencencies[key]
+        if kwargs:
+            callback = partial(callback, **kwargs)  # type: ignore
         if issubclass(msg_type, GenericCommand):
             if msg_type in self.commands_registry:
                 raise ConfigurationError(
@@ -78,7 +94,7 @@ class SyncMessageBus(Generic[TRepositories]):
             )
 
     def remove_listener(
-        self, msg_type: type, callback: SyncMessageHandler[Any, Any]
+        self, msg_type: type, callback: SyncMessageHandler[Any, Any, P]
     ) -> None:
         if issubclass(msg_type, GenericCommand):
             if msg_type not in self.commands_registry:
@@ -109,7 +125,7 @@ class SyncMessageBus(Generic[TRepositories]):
         ret = None
         while queue:
             message = queue.pop(0)
-            if not isinstance(message, (GenericCommand, GenericEvent)):
+            if not isinstance(message, GenericCommand | GenericEvent):
                 raise RuntimeError(f"{message} was not an Event or Command")
             msg_type = type(message)
             if msg_type in self.commands_registry:

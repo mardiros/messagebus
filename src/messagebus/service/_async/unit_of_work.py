@@ -6,7 +6,7 @@ import abc
 import enum
 from collections.abc import Iterator
 from types import TracebackType
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 from messagebus.domain.model import Message
 from messagebus.service._async.repository import (
@@ -64,9 +64,9 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories]):
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         """Rollback in case of exception."""
         if exc:
@@ -116,9 +116,9 @@ class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories]):
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc: Optional[BaseException],
-        tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         # AsyncUnitOfWorkTransaction is making the thing
         await self.__transaction.__aexit__(exc_type, exc, tb)

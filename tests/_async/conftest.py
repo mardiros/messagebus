@@ -1,9 +1,9 @@
 import enum
 from collections.abc import AsyncIterator, Mapping, MutableMapping, MutableSequence
+from types import EllipsisType
 from typing import (
     Any,
-    Optional,
-    Union,
+    ClassVar,
 )
 
 import pytest
@@ -31,12 +31,6 @@ from messagebus.service._async.unit_of_work import (
     AsyncUnitOfWorkTransaction,
 )
 
-try:
-    # does not exists in python 3.7
-    from types import EllipsisType  # type:ignore
-except ImportError:
-    EllipsisType = Any  # type:ignore
-
 
 class MyMetadata(Metadata):
     custom_field: str
@@ -50,6 +44,13 @@ class DummyError(enum.Enum):
 class DummyModel(GenericModel[MyMetadata]):
     id: str = Field()
     counter: int = Field(0)
+
+
+class Notifier:
+    inbox: ClassVar[list[str]] = []
+
+    def send_message(self, message: str):
+        self.inbox.append(message)
 
 
 DummyRepositoryOperationResult = Result[EllipsisType, DummyError]
@@ -80,7 +81,7 @@ class AsyncDummyRepository(AsyncAbstractRepository[DummyModel]):
 class AsyncFooRepository(AsyncDummyRepository): ...
 
 
-Repositories = Union[AsyncDummyRepository, AsyncFooRepository]
+Repositories = AsyncDummyRepository | AsyncFooRepository
 
 
 class AsyncDummyUnitOfWork(AsyncAbstractUnitOfWork[Repositories]):
@@ -110,7 +111,7 @@ class AsyncEventstreamTransport(AsyncAbstractEventstreamTransport):
 class AsyncDummyEventStore(AsyncEventstoreAbstractRepository):
     messages: MutableSequence[Message[MyMetadata]]
 
-    def __init__(self, publisher: Optional[AsyncEventstreamPublisher]):
+    def __init__(self, publisher: AsyncEventstreamPublisher | None):
         super().__init__(publisher=publisher)
         self.messages = []
 
@@ -119,7 +120,7 @@ class AsyncDummyEventStore(AsyncEventstoreAbstractRepository):
 
 
 class AsyncDummyUnitOfWorkWithEvents(AsyncAbstractUnitOfWork[Repositories]):
-    def __init__(self, publisher: Optional[AsyncEventstreamPublisher]) -> None:
+    def __init__(self, publisher: AsyncEventstreamPublisher | None) -> None:
         self.foos = AsyncFooRepository()
         self.bars = AsyncDummyRepository()
         self.eventstore = AsyncDummyEventStore(publisher=publisher)
@@ -134,6 +135,11 @@ class DummyCommand(GenericCommand[MyMetadata]):
     metadata: MyMetadata = MyMetadata(
         name="dummy", schema_version=1, custom_field="foo"
     )
+
+
+class AnotherDummyCommand(GenericCommand[MyMetadata]):
+    id: str = Field(...)
+    metadata: MyMetadata = MyMetadata(name="dummy2", schema_version=1, custom_field="f")
 
 
 class DummyEvent(GenericEvent[MyMetadata]):
@@ -201,8 +207,13 @@ async def uow_with_eventstore(
 
 
 @pytest.fixture
-def bus() -> AsyncMessageBus[Repositories]:
-    return AsyncMessageBus()
+def notifier():
+    return Notifier()
+
+
+@pytest.fixture
+def bus(notifier: Notifier) -> AsyncMessageBus[Repositories]:
+    return AsyncMessageBus(notifier=notifier)
 
 
 @pytest.fixture

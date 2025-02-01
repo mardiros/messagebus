@@ -1,3 +1,7 @@
+0.8.1  - Released on 2025-02-01
+-------------------------------
+* Fix CI 
+
 0.8.0  - Released on 2025-02-01
 -------------------------------
 * Starts implementing depencencies injected in event handlers

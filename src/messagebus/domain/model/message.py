@@ -38,6 +38,14 @@ class Message(BaseModel, Generic[TMetadata]):
     """
 
     def __eq__(self, other: Any) -> bool:
+        """
+        Message are equal if they have the same content
+
+        e.g. the message_id and the creation date can differ to be considered equals.
+
+        This message is usefull during unit tests to ensure that some message are
+        properly generated without having complexity with dynamically generated content.
+        """
         if not isinstance(other, Message):
             return False
         slf = self.model_dump(exclude={"message_id", "created_at"})
@@ -46,12 +54,18 @@ class Message(BaseModel, Generic[TMetadata]):
 
 
 class GenericCommand(Message[TMetadata]):
-    """Baseclass for message of type command."""
+    """
+    Baseclass for message of type command used to customized (overrride) the Metadata.
+    """
 
 
 class GenericEvent(Message[TMetadata]):
-    """Baseclass for message of type event."""
+    """
+    Baseclass for message of type event used to customized (overrride) the Metadata.
+    """
 
 
 Command = GenericCommand[Metadata]
+"""Command that use the default metadata."""
 Event = GenericEvent[Metadata]
+"""Event that use the default metadata."""

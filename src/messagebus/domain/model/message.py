@@ -5,25 +5,14 @@ Message base classes.
 
 """
 
-from collections.abc import MutableSequence
 from datetime import datetime
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic
 from uuid import UUID
 
 from lastuuid import uuid7
 from pydantic import BaseModel, Field
 
-
-class Metadata(BaseModel):
-    name: str = Field(...)
-    """Name of the schema."""
-    schema_version: int = Field(...)
-    """Version of the schema."""
-    published: bool = Field(default=False)
-    """Publish the event to an eventstream."""
-
-
-TMetadata = TypeVar("TMetadata", bound=Metadata)
+from .metadata import Metadata, TMetadata
 
 
 class Message(BaseModel, Generic[TMetadata]):
@@ -64,27 +53,5 @@ class GenericEvent(Message[TMetadata]):
     """Baseclass for message of type event."""
 
 
-class GenericModel(BaseModel, Generic[TMetadata]):
-    """Base class for model."""
-
-    messages: MutableSequence[Message[TMetadata]] = Field(
-        default_factory=list, exclude=True
-    )
-    """
-    List of messages consumed by the unit of work to mutate the repository.
-
-    Those message are ephemeral, published by event handler and consumed
-    by the unit of work during the process of an original command.
-    """
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, GenericModel):
-            return False
-        slf = self.model_dump()
-        otr = other.model_dump()
-        return slf == otr
-
-
-Model = GenericModel[Metadata]
 Command = GenericCommand[Metadata]
 Event = GenericEvent[Metadata]

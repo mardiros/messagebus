@@ -15,6 +15,7 @@ from .domain.model import (
     Message,
     Metadata,
     Model,
+    TMetadata,
 )
 from .service._async.eventstream import (
     AsyncAbstractEventstreamTransport,
@@ -68,6 +69,7 @@ __all__ = [
     "GenericEvent",
     "GenericModel",
     "Message",
+    "TMetadata",
     "Metadata",
     "Model",
     "SyncAbstractEventstreamTransport",

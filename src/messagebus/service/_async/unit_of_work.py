@@ -6,9 +6,12 @@ import abc
 import enum
 from collections.abc import Iterator
 from types import TracebackType
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from messagebus.domain.model import Message
+
+if TYPE_CHECKING:
+    from messagebus.service._async.dependency import AsyncDependency
 from messagebus.service._async.repository import (
     AsyncAbstractRepository,
     AsyncEventstoreAbstractRepository,
@@ -39,6 +42,7 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories]):
     def __init__(self, uow: AsyncAbstractUnitOfWork[TRepositories]) -> None:
         self.status = TransactionStatus.running
         self.uow = uow
+        self._hooks: list[Any] = []
 
     def __getattr__(self, name: str) -> TRepositories:
         return getattr(self.uow, name)
@@ -47,15 +51,29 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories]):
     def eventstore(self) -> AsyncEventstoreAbstractRepository:
         return self.uow.eventstore
 
+    def add_listener(self, listener: AsyncDependency) -> AsyncDependency:
+        self._hooks.append(listener)
+        return listener
+
+    async def _on_after_commit(self) -> None:
+        for val in self._hooks:
+            await val.on_after_commit()
+
+    async def _on_after_rollback(self) -> None:
+        for val in self._hooks:
+            await val.on_after_rollback()
+
     async def commit(self) -> None:
         if self.status != TransactionStatus.running:
             raise TransactionError(f"Transaction already closed ({self.status.value}).")
         await self.uow.commit()
         self.status = TransactionStatus.committed
+        await self._on_after_commit()
 
     async def rollback(self) -> None:
         await self.uow.rollback()
         self.status = TransactionStatus.rolledback
+        await self._on_after_rollback()
 
     async def __aenter__(self) -> AsyncUnitOfWorkTransaction[TRepositories]:
         if self.status != TransactionStatus.running:
@@ -130,3 +148,6 @@ class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories]):
     @abc.abstractmethod
     async def rollback(self) -> None:
         """Rollback the transation."""
+
+
+TAsyncUow = TypeVar("TAsyncUow", bound=AsyncAbstractUnitOfWork[Any])

@@ -7,15 +7,24 @@ import importlib
 import inspect
 import logging
 from collections import defaultdict
-from functools import partial
+from collections.abc import Mapping
 from typing import Any, Generic, cast
 
 import venusian  # type: ignore
 
 from messagebus.domain.model import GenericCommand, GenericEvent, Message
-from messagebus.typing import AsyncMessageHandler, P, TAsyncUow, TMessage
-
-from .unit_of_work import AsyncUnitOfWorkTransaction, TRepositories
+from messagebus.domain.model.message import TMessage
+from messagebus.service._async.dependency import (
+    AsyncDependency,
+    AsyncMessageHandler,
+    AsyncMessageHook,
+    P,
+)
+from messagebus.service._async.unit_of_work import (
+    AsyncUnitOfWorkTransaction,
+    TAsyncUow,
+    TRepositories,
+)
 
 log = logging.getLogger(__name__)
 VENUSIAN_CATEGORY = "messagebus"
@@ -55,38 +64,38 @@ class AsyncMessageBus(Generic[TRepositories]):
 
     def __init__(self, **dependencies: Any) -> None:
         self.commands_registry: dict[
-            type[GenericCommand[Any]],
-            AsyncMessageHandler[GenericCommand[Any], Any, ...],
+            type[GenericCommand[Any]], AsyncMessageHook[Any, Any, Any]
         ] = {}
         self.events_registry: dict[
-            type[GenericEvent[Any]],
-            list[AsyncMessageHandler[GenericEvent[Any], Any, ...]],
+            type[GenericEvent[Any]], list[AsyncMessageHook[Any, Any, Any]]
         ] = defaultdict(list)
-        self.depencencies = dependencies or {}
+        self.dependencies = cast(
+            Mapping[str, type[AsyncDependency]], dependencies or {}
+        )
 
     def add_listener(
         self, msg_type: type[Message[Any]], callback: AsyncMessageHandler[Any, Any, P]
     ) -> None:
         signature = inspect.signature(callback)
-        kwargs = {}
+        dependencies: list[str] = []
         for idx, key in enumerate(signature.parameters):
             if idx >= 2:
-                if key not in self.depencencies:
+                if key not in self.dependencies:
                     raise ConfigurationError(
                         f"Missing dependency in message bus: {key} for command "
                         f"type {msg_type.__name__}, listener: {callback.__name__}"
                     )
-                kwargs[key] = self.depencencies[key]
-        if kwargs:
-            callback = partial(callback, **kwargs)  # type: ignore
+                dependencies.append(key)
+
+        msghook = AsyncMessageHook(callback, dependencies)
         if issubclass(msg_type, GenericCommand):
             if msg_type in self.commands_registry:
                 raise ConfigurationError(
                     f"{msg_type} command has been registered twice"
                 )
-            self.commands_registry[msg_type] = callback
+            self.commands_registry[msg_type] = msghook
         elif issubclass(msg_type, GenericEvent):
-            self.events_registry[msg_type].append(callback)
+            self.events_registry[msg_type].append(msghook)
         else:
             raise ConfigurationError(
                 f"Invalid usage of the listen decorator: "
@@ -101,12 +110,13 @@ class AsyncMessageBus(Generic[TRepositories]):
                 raise ConfigurationError(f"{msg_type} command has not been registered")
             del self.commands_registry[msg_type]
         elif issubclass(msg_type, GenericEvent):
-            try:
-                self.events_registry[msg_type].remove(callback)
-            except ValueError as exc:
-                raise ConfigurationError(
-                    f"{msg_type} event has not been registered"
-                ) from exc
+            msg_hooks = [
+                v for v in self.events_registry[msg_type] if v.callback == callback
+            ]
+            if msg_hooks:
+                self.events_registry[msg_type].remove(msg_hooks[0])
+            else:
+                raise ConfigurationError(f"{msg_type} event has not been registered")
         else:
             raise ConfigurationError(
                 f"Invalid usage of the listen decorator: "
@@ -120,6 +130,7 @@ class AsyncMessageBus(Generic[TRepositories]):
         Notify listener of that event registered with `messagebus.add_listener`.
         Return the first event from the command.
         """
+        dependencies = {k: uow.add_listener(v()) for k, v in self.dependencies.items()}
         queue = [message]
         idx = 0
         ret = None
@@ -130,14 +141,14 @@ class AsyncMessageBus(Generic[TRepositories]):
             msg_type = type(message)
             if msg_type in self.commands_registry:
                 cmdret = await self.commands_registry[msg_type](  # type: ignore
-                    cast(GenericCommand[Any], message), uow
+                    cast(GenericCommand[Any], message), uow, dependencies
                 )
                 if idx == 0:
                     ret = cmdret
                 queue.extend(uow.uow.collect_new_events())
             elif msg_type in self.events_registry:
-                for callback in self.events_registry[msg_type]:  # type: ignore
-                    await callback(cast(GenericEvent[Any], message), uow)
+                for msghook in self.events_registry[msg_type]:  # type: ignore
+                    await msghook(cast(GenericEvent[Any], message), uow, dependencies)
                     queue.extend(uow.uow.collect_new_events())
             await uow.eventstore.add(message)
             idx += 1

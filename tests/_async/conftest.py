@@ -17,6 +17,7 @@ from messagebus.domain.model import (
     Message,
     Metadata,
 )
+from messagebus.service._async.dependency import AsyncDependency
 from messagebus.service._async.eventstream import (
     AsyncAbstractEventstreamTransport,
     AsyncEventstreamPublisher,
@@ -46,7 +47,7 @@ class DummyModel(GenericModel[MyMetadata]):
     counter: int = Field(0)
 
 
-class Notifier:
+class Notifier(AsyncDependency):
     inbox: ClassVar[list[str]] = []
 
     def send_message(self, message: str):
@@ -208,11 +209,11 @@ async def uow_with_eventstore(
 
 @pytest.fixture
 def notifier():
-    return Notifier()
+    return Notifier
 
 
 @pytest.fixture
-def bus(notifier: Notifier) -> AsyncMessageBus[Repositories]:
+def bus(notifier: type[Notifier]) -> AsyncMessageBus[Repositories]:
     return AsyncMessageBus(notifier=notifier)
 
 

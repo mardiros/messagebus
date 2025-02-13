@@ -1,3 +1,9 @@
+0.9.0  - Released on 2025-02-13
+-------------------------------
+* Change the depencendies injection in event handlers (api break!)
+  Now, an instance of a class is created on every bus.handle call.
+  It lets isolate depenencies per unit of work transaction.
+
 0.8.1  - Released on 2025-02-01
 -------------------------------
 * Fix CI 

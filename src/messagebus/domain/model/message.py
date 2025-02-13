@@ -6,7 +6,7 @@ Message base classes.
 """
 
 from datetime import datetime
-from typing import Any, Generic
+from typing import Any, Generic, TypeVar
 from uuid import UUID
 
 from lastuuid import uuid7
@@ -69,3 +69,6 @@ Command = GenericCommand[Metadata]
 """Command that use the default metadata."""
 Event = GenericEvent[Metadata]
 """Event that use the default metadata."""
+
+
+TMessage = TypeVar("TMessage", bound=Message[Any])

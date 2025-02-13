@@ -1,4 +1,3 @@
-import functools
 from typing import Any
 
 import pytest
@@ -9,6 +8,7 @@ from tests._async.conftest import (
     DummyCommand,
     DummyEvent,
     DummyModel,
+    Notifier,
     Repositories,
 )
 from tests._async.handlers import dummy
@@ -153,10 +153,12 @@ def test_scan(bus: AsyncMessageBus[Any]):
     bus.scan("tests._async.handlers")
 
     assert DummyCommand in bus.commands_registry
-    assert bus.commands_registry[DummyCommand] == dummy.handler
+    assert bus.commands_registry[DummyCommand].callback == dummy.handler
 
     assert DummyEvent in bus.events_registry
-    assert bus.events_registry[DummyEvent] == [dummy.handler_evt1, dummy.handler_evt2]
+    assert len(bus.events_registry[DummyEvent]) == 2
+    assert bus.events_registry[DummyEvent][0].callback == dummy.handler_evt1
+    assert bus.events_registry[DummyEvent][1].callback == dummy.handler_evt2
 
 
 def test_scan_relative(bus: AsyncMessageBus[Any]):
@@ -171,11 +173,11 @@ def test_scan_relative(bus: AsyncMessageBus[Any]):
 async def listen_command_with_dependency(
     cmd: DummyCommand,
     uow: AsyncUnitOfWorkTransaction[Repositories],
-    dummy_dict: dict[str, str],
+    dummy_dep: Notifier,
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)
-    dummy_dict["foo"] = "bar"
+    dummy_dep.send_message("foobar")
     return foo
 
 
@@ -183,13 +185,12 @@ async def test_messagebus_dependency(
     uow: AsyncUnitOfWorkTransaction[Repositories],
 ):
     d: dict[str, str] = {}
-    bus = AsyncMessageBus[Repositories](dummy_dict=d)
+    bus = AsyncMessageBus[Repositories](dummy_dep=d)
     bus.add_listener(DummyCommand, listen_command_with_dependency)
-    assert isinstance(bus.commands_registry[DummyCommand], functools.partial)
     assert (
-        bus.commands_registry[DummyCommand].keywords  # type: ignore
-        == {"dummy_dict": d}
+        bus.commands_registry[DummyCommand].callback == listen_command_with_dependency
     )
+    assert bus.commands_registry[DummyCommand].dependencies == ["dummy_dep"]
 
 
 async def test_messagebus_dependency_error_missing_deps(
@@ -199,6 +200,6 @@ async def test_messagebus_dependency_error_missing_deps(
     with pytest.raises(ConfigurationError) as ctx:
         bus.add_listener(DummyCommand, listen_command_with_dependency)
     assert (
-        str(ctx.value) == "Missing dependency in message bus: dummy_dict for "
+        str(ctx.value) == "Missing dependency in message bus: dummy_dep for "
         "command type DummyCommand, listener: listen_command_with_dependency"
     )

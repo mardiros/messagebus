@@ -6,9 +6,12 @@ import abc
 import enum
 from collections.abc import Iterator
 from types import TracebackType
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from messagebus.domain.model import Message
+
+if TYPE_CHECKING:
+    from messagebus.service._sync.dependency import SyncDependency
 from messagebus.service._sync.repository import (
     SyncAbstractRepository,
     SyncEventstoreAbstractRepository,
@@ -39,6 +42,7 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories]):
     def __init__(self, uow: SyncAbstractUnitOfWork[TRepositories]) -> None:
         self.status = TransactionStatus.running
         self.uow = uow
+        self._hooks: list[Any] = []
 
     def __getattr__(self, name: str) -> TRepositories:
         return getattr(self.uow, name)
@@ -47,15 +51,29 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories]):
     def eventstore(self) -> SyncEventstoreAbstractRepository:
         return self.uow.eventstore
 
+    def add_listener(self, listener: SyncDependency) -> SyncDependency:
+        self._hooks.append(listener)
+        return listener
+
+    def _on_after_commit(self) -> None:
+        for val in self._hooks:
+            val.on_after_commit()
+
+    def _on_after_rollback(self) -> None:
+        for val in self._hooks:
+            val.on_after_rollback()
+
     def commit(self) -> None:
         if self.status != TransactionStatus.running:
             raise TransactionError(f"Transaction already closed ({self.status.value}).")
         self.uow.commit()
         self.status = TransactionStatus.committed
+        self._on_after_commit()
 
     def rollback(self) -> None:
         self.uow.rollback()
         self.status = TransactionStatus.rolledback
+        self._on_after_rollback()
 
     def __enter__(self) -> SyncUnitOfWorkTransaction[TRepositories]:
         if self.status != TransactionStatus.running:
@@ -130,3 +148,6 @@ class SyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories]):
     @abc.abstractmethod
     def rollback(self) -> None:
         """Rollback the transation."""
+
+
+TSyncUow = TypeVar("TSyncUow", bound=SyncAbstractUnitOfWork[Any])

@@ -1,3 +1,4 @@
+import abc
 from collections.abc import Mapping, Sequence
 from typing import Any, Generic
 
@@ -6,12 +7,14 @@ from messagebus.service._sync.unit_of_work import TSyncUow
 from messagebus.typing import P, SyncMessageHandler
 
 
-class SyncDependency:
+class SyncDependency(abc.ABC):
     """Describe an async dependency"""
 
+    @abc.abstractmethod
     def on_after_commit(self) -> None:
         """Method called when the unit of work transaction is has been commited."""
 
+    @abc.abstractmethod
     def on_after_rollback(self) -> None:
         """Method called when the unit of work transaction is has been rolled back."""
 

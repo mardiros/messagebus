@@ -53,6 +53,12 @@ class Notifier(AsyncDependency):
     def send_message(self, message: str):
         self.inbox.append(message)
 
+    async def on_after_commit(self) -> None:
+        pass
+
+    async def on_after_rollback(self) -> None:
+        pass
+
 
 DummyRepositoryOperationResult = Result[EllipsisType, DummyError]
 DummyRepositoryResult = Result[DummyModel, DummyError]

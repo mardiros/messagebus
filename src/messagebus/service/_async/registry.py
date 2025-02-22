@@ -80,11 +80,11 @@ class AsyncMessageBus(Generic[TRepositories]):
         dependencies: list[str] = []
         for idx, key in enumerate(signature.parameters):
             if idx >= 2:
-                if key not in self.dependencies:
-                    raise ConfigurationError(
-                        f"Missing dependency in message bus: {key} for command "
-                        f"type {msg_type.__name__}, listener: {callback.__name__}"
-                    )
+                # if key not in self.dependencies:
+                #     raise ConfigurationError(
+                #         f"Missing dependency in message bus: {key} for command "
+                #         f"type {msg_type.__name__}, listener: {callback.__name__}"
+                #     )
                 dependencies.append(key)
 
         msghook = AsyncMessageHook(callback, dependencies)
@@ -124,14 +124,22 @@ class AsyncMessageBus(Generic[TRepositories]):
             )
 
     async def handle(
-        self, message: Message[Any], uow: AsyncUnitOfWorkTransaction[TRepositories]
+        self,
+        command: GenericCommand[Any],
+        uow: AsyncUnitOfWorkTransaction[TRepositories],
+        **transient_dependencies: Any,
     ) -> Any:
         """
         Notify listener of that event registered with `messagebus.add_listener`.
         Return the first event from the command.
+
+        :param message: The message to handle, should be a command.
         """
         dependencies = {k: uow.add_listener(v()) for k, v in self.dependencies.items()}
-        queue = [message]
+        if transient_dependencies:
+            [uow.add_listener(d) for d in transient_dependencies.values()]
+            dependencies.update(transient_dependencies)
+        queue: list[Message[Any]] = [command]
         idx = 0
         ret = None
         while queue:

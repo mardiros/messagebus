@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar
 from messagebus.domain.model import Message
 
 if TYPE_CHECKING:
-    from messagebus.service._sync.dependency import SyncDependency
+    from messagebus.service._sync.dependency import SyncDependency  # coverage: ignore
 from messagebus.service._sync.repository import (
     SyncAbstractRepository,
     SyncEventstoreAbstractRepository,

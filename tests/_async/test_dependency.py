@@ -1,5 +1,11 @@
+from typing import Any
+
+from messagebus.service._async.dependency import AsyncDependency
 from messagebus.service._async.registry import AsyncMessageBus
-from messagebus.service._async.unit_of_work import AsyncUnitOfWorkTransaction
+from messagebus.service._async.unit_of_work import (
+    AsyncAbstractUnitOfWork,
+    AsyncUnitOfWorkTransaction,
+)
 from tests._async.conftest import (
     AsyncDummyUnitOfWorkWithEvents,
     AsyncEventstreamTransport,
@@ -38,3 +44,39 @@ async def test_store_events_and_publish(
     assert notifier.inbox == [
         "Foo dummy_cmd ordered",
     ]
+
+
+class TransientDependency(AsyncDependency):
+    def __init__(self) -> None:
+        self.tracks: list[str] = []
+        self.committed: bool | None = None
+
+    async def on_after_commit(self) -> None:
+        self.committed = True
+
+    async def on_after_rollback(self) -> None:
+        self.committed = False
+
+
+async def listen_with_transient(
+    command: DummyCommand,
+    uow: AsyncAbstractUnitOfWork[Any],
+    tracker: TransientDependency,
+):
+    tracker.tracks.append("tracked")
+
+
+async def test_transient_dependency(
+    bus: AsyncMessageBus[Repositories],
+    eventstream_transport: AsyncEventstreamTransport,
+    uow_with_eventstore: AsyncDummyUnitOfWorkWithEvents,
+    dummy_command: DummyCommand,
+    notifier: Notifier,
+):
+    tmp = TransientDependency()
+    bus.add_listener(DummyCommand, listen_with_transient)
+    async with uow_with_eventstore as tuow:
+        await bus.handle(dummy_command, tuow, tracker=tmp)
+        await tuow.commit()
+    assert tmp.tracks == ["tracked"]
+    assert tmp.committed is True

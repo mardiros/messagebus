@@ -189,15 +189,3 @@ def test_messagebus_dependency(
         bus.commands_registry[DummyCommand].callback == listen_command_with_dependency
     )
     assert bus.commands_registry[DummyCommand].dependencies == ["dummy_dep"]
-
-
-def test_messagebus_dependency_error_missing_deps(
-    uow: SyncUnitOfWorkTransaction[Repositories],
-):
-    bus = SyncMessageBus[Repositories]()
-    with pytest.raises(ConfigurationError) as ctx:
-        bus.add_listener(DummyCommand, listen_command_with_dependency)
-    assert (
-        str(ctx.value) == "Missing dependency in message bus: dummy_dep for "
-        "command type DummyCommand, listener: listen_command_with_dependency"
-    )

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar
 from messagebus.domain.model import Message
 
 if TYPE_CHECKING:
-    from messagebus.service._async.dependency import AsyncDependency
+    from messagebus.service._async.dependency import AsyncDependency  # coverage: ignore
 from messagebus.service._async.repository import (
     AsyncAbstractRepository,
     AsyncEventstoreAbstractRepository,

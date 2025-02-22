@@ -17,6 +17,7 @@ from .domain.model import (
     Model,
     TMetadata,
 )
+from .service._async.dependency import AsyncDependency
 from .service._async.eventstream import (
     AsyncAbstractEventstreamTransport,
     AsyncEventstreamPublisher,
@@ -30,6 +31,7 @@ from .service._async.unit_of_work import (
     AsyncSinkholeEventstoreRepository,
     AsyncUnitOfWorkTransaction,
 )
+from .service._sync.dependency import SyncDependency
 from .service._sync.eventstream import (
     SyncAbstractEventstreamTransport,
     SyncEventstreamPublisher,
@@ -84,4 +86,7 @@ __all__ = [
     # Registry
     "async_listen",
     "sync_listen",
+    # Dependencies,
+    "AsyncDependency",
+    "SyncDependency",
 ]

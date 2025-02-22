@@ -1,3 +1,9 @@
+0.10.0  - Released on 2025-02-22
+--------------------------------
+* Add support of transient dependencies.
+  Now, bus.handle accept kwargs that are dependencies that can
+  be consumed by handlers
+
 0.9.0  - Released on 2025-02-13
 -------------------------------
 * Change the depencendies injection in event handlers (api break!)

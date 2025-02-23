@@ -22,14 +22,17 @@ class AsyncDependency(abc.ABC):
 class AsyncMessageHook(Generic[TMessage, TAsyncUow, P]):
     callback: AsyncMessageHandler[TMessage, "TAsyncUow", P]
     dependencies: Sequence[str]
+    optional_dependencies: Sequence[str]
 
     def __init__(
         self,
         callback: AsyncMessageHandler[TMessage, "TAsyncUow", P],
         dependencies: Sequence[str],
+        optional_dependencies: Sequence[str],
     ) -> None:
         self.callback = callback
         self.dependencies = dependencies
+        self.optional_dependencies = optional_dependencies
 
     async def __call__(
         self,
@@ -38,5 +41,12 @@ class AsyncMessageHook(Generic[TMessage, TAsyncUow, P]):
         dependencies: Mapping[str, AsyncDependency],
     ) -> Any:
         deps = {k: dependencies[k] for k in self.dependencies}
+        deps.update(
+            {
+                k: dependencies[k]
+                for k in self.optional_dependencies
+                if k in dependencies
+            }
+        )
         resp = await self.callback(msg, uow, **deps)  # type: ignore
         return resp

@@ -76,16 +76,20 @@ class SyncMessageBus(Generic[TRepositories]):
     ) -> None:
         signature = inspect.signature(callback)
         dependencies: list[str] = []
-        for idx, key in enumerate(signature.parameters):
+        optional_dependencies: list[str] = []
+        for idx, (key, value) in enumerate(signature.parameters.items()):
             if idx >= 2:
                 # if key not in self.dependencies:
                 #     raise ConfigurationError(
                 #         f"Missing dependency in message bus: {key} for command "
                 #         f"type {msg_type.__name__}, listener: {callback.__name__}"
                 #     )
-                dependencies.append(key)
+                if value.default is value.empty:
+                    dependencies.append(key)
+                else:
+                    optional_dependencies.append(key)
 
-        msghook = SyncMessageHook(callback, dependencies)
+        msghook = SyncMessageHook(callback, dependencies, optional_dependencies)
         if issubclass(msg_type, GenericCommand):
             if msg_type in self.commands_registry:
                 raise ConfigurationError(

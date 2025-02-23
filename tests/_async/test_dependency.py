@@ -80,3 +80,42 @@ async def test_transient_dependency(
         await tuow.commit()
     assert tmp.tracks == ["tracked"]
     assert tmp.committed is True
+
+
+async def listen_with_optional(
+    command: DummyCommand,
+    uow: AsyncAbstractUnitOfWork[Any],
+    tracker: TransientDependency | None = None,
+):
+    if tracker:
+        tracker.tracks.append("optionnaly_tracked")
+
+
+async def test_optional_dependency(
+    bus: AsyncMessageBus[Repositories],
+    eventstream_transport: AsyncEventstreamTransport,
+    uow_with_eventstore: AsyncDummyUnitOfWorkWithEvents,
+    dummy_command: DummyCommand,
+    notifier: Notifier,
+):
+    tmp = TransientDependency()
+    bus.add_listener(DummyCommand, listen_with_optional)
+    async with uow_with_eventstore as tuow:
+        await bus.handle(dummy_command, tuow, tracker=tmp)
+        await tuow.commit()
+    assert tmp.tracks == ["optionnaly_tracked"]
+    assert tmp.committed is True
+
+
+async def test_optional_dependency_missing(
+    bus: AsyncMessageBus[Repositories],
+    eventstream_transport: AsyncEventstreamTransport,
+    uow_with_eventstore: AsyncDummyUnitOfWorkWithEvents,
+    dummy_command: DummyCommand,
+    notifier: Notifier,
+):
+    bus.add_listener(DummyCommand, listen_with_optional)
+    async with uow_with_eventstore as tuow:
+        await bus.handle(dummy_command, tuow)
+        await tuow.commit()
+    # we tests that there is no issue here

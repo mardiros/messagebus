@@ -22,14 +22,17 @@ class SyncDependency(abc.ABC):
 class SyncMessageHook(Generic[TMessage, TSyncUow, P]):
     callback: SyncMessageHandler[TMessage, "TSyncUow", P]
     dependencies: Sequence[str]
+    optional_dependencies: Sequence[str]
 
     def __init__(
         self,
         callback: SyncMessageHandler[TMessage, "TSyncUow", P],
         dependencies: Sequence[str],
+        optional_dependencies: Sequence[str],
     ) -> None:
         self.callback = callback
         self.dependencies = dependencies
+        self.optional_dependencies = optional_dependencies
 
     def __call__(
         self,
@@ -38,5 +41,12 @@ class SyncMessageHook(Generic[TMessage, TSyncUow, P]):
         dependencies: Mapping[str, SyncDependency],
     ) -> Any:
         deps = {k: dependencies[k] for k in self.dependencies}
+        deps.update(
+            {
+                k: dependencies[k]
+                for k in self.optional_dependencies
+                if k in dependencies
+            }
+        )
         resp = self.callback(msg, uow, **deps)  # type: ignore
         return resp

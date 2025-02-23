@@ -1,3 +1,9 @@
+0.11.0  - Released on 2025-02-23
+--------------------------------
+* Add support of optional dependencies.
+  if a service handlers use a dependency with a default value,
+  then the message bus handle it properly.
+
 0.10.0  - Released on 2025-02-22
 --------------------------------
 * Add support of transient dependencies.

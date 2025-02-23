@@ -1,6 +1,8 @@
 from typing import Any
 
-from messagebus.service._sync.dependency import SyncDependency
+import pytest
+
+from messagebus.service._sync.dependency import MissingDependencyError, SyncDependency
 from messagebus.service._sync.registry import SyncMessageBus
 from messagebus.service._sync.unit_of_work import (
     SyncAbstractUnitOfWork,
@@ -80,6 +82,21 @@ def test_transient_dependency(
         tuow.commit()
     assert tmp.tracks == ["tracked"]
     assert tmp.committed is True
+
+
+def test_transient_dependency_missing(
+    bus: SyncMessageBus[Repositories],
+    eventstream_transport: SyncEventstreamTransport,
+    uow_with_eventstore: SyncDummyUnitOfWorkWithEvents,
+    dummy_command: DummyCommand,
+    notifier: Notifier,
+):
+    bus.add_listener(DummyCommand, listen_with_transient)
+    with pytest.raises(MissingDependencyError) as ctx:
+        with uow_with_eventstore as tuow:
+            bus.handle(dummy_command, tuow)
+            tuow.commit()
+    assert str(ctx.value) == "Missing messagebus dependency 'tracker'"
 
 
 def listen_with_optional(

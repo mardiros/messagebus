@@ -172,6 +172,7 @@ def listen_command_with_dependency(
     cmd: DummyCommand,
     uow: SyncUnitOfWorkTransaction[Repositories],
     dummy_dep: Notifier,
+    dummy_dep2: Notifier | None = None,
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)
@@ -189,3 +190,4 @@ def test_messagebus_dependency(
         bus.commands_registry[DummyCommand].callback == listen_command_with_dependency
     )
     assert bus.commands_registry[DummyCommand].dependencies == ["dummy_dep"]
+    assert bus.commands_registry[DummyCommand].optional_dependencies == ["dummy_dep2"]

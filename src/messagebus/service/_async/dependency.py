@@ -7,6 +7,10 @@ from messagebus.service._async.unit_of_work import TAsyncUow
 from messagebus.typing import AsyncMessageHandler, P
 
 
+class MissingDependencyError(RuntimeError):
+    """Raised if a dependency has not been added in the bus or in the handle command."""
+
+
 class AsyncDependency(abc.ABC):
     """Describe an async dependency"""
 
@@ -40,7 +44,12 @@ class AsyncMessageHook(Generic[TMessage, TAsyncUow, P]):
         uow: "TAsyncUow",
         dependencies: Mapping[str, AsyncDependency],
     ) -> Any:
-        deps = {k: dependencies[k] for k in self.dependencies}
+        try:
+            deps = {k: dependencies[k] for k in self.dependencies}
+        except KeyError as key:
+            raise MissingDependencyError(
+                f"Missing messagebus dependency {key}"
+            ) from None
         deps.update(
             {
                 k: dependencies[k]

@@ -27,8 +27,15 @@ class GenericModel(BaseModel, Generic[TMetadata]):
     by the unit of work during the process of an original command.
     """
 
+    def __repr__(self) -> str:
+        slf = self.model_dump(exclude={"messages"})
+        attrs = [f"{key}={val!r}" for key, val in slf.items()]
+        if self.messages:
+            attrs.append(f"message={self.messages!r}")
+        return f"<{self.__class__.__name__} {' '.join(attrs)}>"
+
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, GenericModel):
+        if not isinstance(other, self.__class__):
             return False
         slf = self.model_dump()
         otr = other.model_dump()

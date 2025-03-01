@@ -37,6 +37,11 @@ class Message(BaseModel, Generic[TMetadata]):
     metadata are defined statically at the definition of the message.
     """
 
+    def __repr__(self) -> str:
+        slf = self.model_dump(exclude={"message_id", "created_at", "metadata"})
+        attrs = [f"{key}={val!r}" for key, val in slf.items()]
+        return f"<{self.__class__.__name__} {' '.join(attrs)}>"
+
     def __eq__(self, other: Any) -> bool:
         """
         Message are equal if they have the same content

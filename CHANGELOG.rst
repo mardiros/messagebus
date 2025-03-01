@@ -1,3 +1,8 @@
+0.11.1  - Released on 2025-03-01
+--------------------------------
+* Customize repr to improve tests unit equality debugging
+* Fix bug in model equality, they must have the same type
+
 0.11.0  - Released on 2025-02-23
 --------------------------------
 * Add support of optional dependencies.

@@ -2,7 +2,7 @@
 authors = [{ name = "Guillaume Gauvrit", email = "guillaume@gauvr.it" }]
 description = "Lightweight message bus library designed for event-driven architectures."
 name = "messagebus"
-version = "0.11.0"
+version = "0.11.1"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 keywords = ["event-driven", "microservice", "CQRS"]

@@ -35,7 +35,7 @@ class GenericModel(BaseModel, Generic[TMetadata]):
         return f"<{self.__class__.__name__} {' '.join(attrs)}>"
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, GenericModel):
+        if not isinstance(other, self.__class__):
             return False
         slf = self.model_dump()
         otr = other.model_dump()

@@ -107,3 +107,20 @@ async def test_transaction_commit_twice(uow: AsyncDummyUnitOfWork):
             await tuow.commit()
 
     assert str(ctx.value).endswith("Transaction already closed (committed).")
+
+
+async def test_detach_transaction(uow: AsyncDummyUnitOfWork):
+    async with uow as tuow:
+        await uow.foos.add(DummyModel(id="1", counter=1))
+        await uow.foos.add(DummyModel(id="2", counter=1))
+        await uow.foos.add(DummyModel(id="3", counter=1))
+        await tuow.commit()
+    async with uow as tuow:
+        iter_foos = uow.foos.find(id="2")
+        await tuow.detach()
+
+    try:
+        foos = [foo async for foo in iter_foos]
+        assert foos == [DummyModel(id="2", counter=1)]
+    finally:
+        await tuow.close()

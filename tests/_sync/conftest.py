@@ -84,6 +84,12 @@ class SyncDummyRepository(SyncAbstractRepository[DummyModel]):
         except KeyError:
             return Err(DummyError.not_found)
 
+    def find(self, id: str | None = None) -> Iterator[DummyModel]:
+        for model in self.models.values():
+            if id is not None and id != model.id:
+                continue
+            yield model
+
 
 class SyncFooRepository(SyncDummyRepository): ...
 

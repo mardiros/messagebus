@@ -105,3 +105,20 @@ def test_transaction_commit_twice(uow: SyncDummyUnitOfWork):
             tuow.commit()
 
     assert str(ctx.value).endswith("Transaction already closed (committed).")
+
+
+def test_detach_transaction(uow: SyncDummyUnitOfWork):
+    with uow as tuow:
+        uow.foos.add(DummyModel(id="1", counter=1))
+        uow.foos.add(DummyModel(id="2", counter=1))
+        uow.foos.add(DummyModel(id="3", counter=1))
+        tuow.commit()
+    with uow as tuow:
+        iter_foos = uow.foos.find(id="2")
+        tuow.detach()
+
+    try:
+        foos = [foo for foo in iter_foos]
+        assert foos == [DummyModel(id="2", counter=1)]
+    finally:
+        tuow.close()

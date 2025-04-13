@@ -1,3 +1,7 @@
+0.12.0  - Released on 2025-04-13
+--------------------------------
+* Add a new state for the transaction for streaming context.
+
 0.11.1  - Released on 2025-03-01
 --------------------------------
 * Customize repr to improve tests unit equality debugging

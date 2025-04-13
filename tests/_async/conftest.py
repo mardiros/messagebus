@@ -84,6 +84,12 @@ class AsyncDummyRepository(AsyncAbstractRepository[DummyModel]):
         except KeyError:
             return Err(DummyError.not_found)
 
+    async def find(self, id: str | None = None) -> AsyncIterator[DummyModel]:
+        for model in self.models.values():
+            if id is not None and id != model.id:
+                continue
+            yield model
+
 
 class AsyncFooRepository(AsyncDummyRepository): ...
 

@@ -97,20 +97,6 @@ class SyncFooRepository(SyncDummyRepository): ...
 Repositories = SyncDummyRepository | SyncFooRepository
 
 
-class SyncDummyUnitOfWork(SyncAbstractUnitOfWork[Repositories]):
-    def __init__(self) -> None:
-        super().__init__()
-        self.status = "init"
-        self.foos = SyncFooRepository()
-        self.bars = SyncDummyRepository()
-
-    def commit(self) -> None:
-        self.status = "committed"
-
-    def rollback(self) -> None:
-        self.status = "aborted"
-
-
 class SyncEventstreamTransport(SyncAbstractEventstreamTransport):
     events: MutableSequence[Mapping[str, Any]]
 
@@ -132,7 +118,23 @@ class SyncDummyEventStore(SyncEventstoreAbstractRepository):
         self.messages.append(message)
 
 
-class SyncDummyUnitOfWorkWithEvents(SyncAbstractUnitOfWork[Repositories]):
+class SyncDummyUnitOfWork(SyncAbstractUnitOfWork[Repositories, SyncDummyEventStore]):
+    def __init__(self) -> None:
+        super().__init__()
+        self.status = "init"
+        self.foos = SyncFooRepository()
+        self.bars = SyncDummyRepository()
+
+    def commit(self) -> None:
+        self.status = "committed"
+
+    def rollback(self) -> None:
+        self.status = "aborted"
+
+
+class SyncDummyUnitOfWorkWithEvents(
+    SyncAbstractUnitOfWork[Repositories, SyncDummyEventStore]
+):
     def __init__(self, publisher: SyncEventstreamPublisher | None) -> None:
         self.foos = SyncFooRepository()
         self.bars = SyncDummyRepository()
@@ -181,7 +183,7 @@ def uow() -> Iterator[SyncDummyUnitOfWork]:
 @pytest.fixture
 def tuow(
     uow: SyncDummyUnitOfWork,
-) -> Iterator[SyncUnitOfWorkTransaction[Repositories]]:
+) -> Iterator[SyncUnitOfWorkTransaction[Repositories, SyncDummyEventStore]]:
     with uow as tuow:
         yield tuow
         tuow.rollback()

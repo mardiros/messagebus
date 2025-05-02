@@ -14,6 +14,7 @@ from tests._sync.conftest import (
     DummyModel,
     Notifier,
     Repositories,
+    SyncDummyEventStore,
     SyncDummyUnitOfWorkWithEvents,
     SyncEventstreamTransport,
 )
@@ -21,7 +22,7 @@ from tests._sync.conftest import (
 
 def listen_command(
     cmd: DummyCommand,
-    uow: SyncUnitOfWorkTransaction[Repositories],
+    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyEventStore],
     notifier: Notifier,
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
@@ -62,7 +63,7 @@ class TransientDependency(SyncDependency):
 
 def listen_with_transient(
     command: DummyCommand,
-    uow: SyncAbstractUnitOfWork[Any],
+    uow: SyncAbstractUnitOfWork[Any, Any],
     tracker: TransientDependency,
 ):
     tracker.tracks.append("tracked")
@@ -101,7 +102,7 @@ def test_transient_dependency_missing(
 
 def listen_with_optional(
     command: DummyCommand,
-    uow: SyncAbstractUnitOfWork[Any],
+    uow: SyncAbstractUnitOfWork[Any, Any],
     tracker: TransientDependency | None = None,
 ):
     if tracker:

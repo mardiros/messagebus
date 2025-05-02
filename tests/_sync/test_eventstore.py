@@ -6,13 +6,15 @@ from tests._sync.conftest import (
     DummyModel,
     MyMetadata,
     Repositories,
+    SyncDummyEventStore,
     SyncDummyUnitOfWorkWithEvents,
     SyncEventstreamTransport,
 )
 
 
 def listen_command(
-    cmd: DummyCommand, uow: SyncUnitOfWorkTransaction[Repositories]
+    cmd: DummyCommand,
+    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyEventStore],
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)

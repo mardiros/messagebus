@@ -1,6 +1,7 @@
 from messagebus.service._async.registry import AsyncMessageBus
 from messagebus.service._async.unit_of_work import AsyncUnitOfWorkTransaction
 from tests._async.conftest import (
+    AsyncDummyEventStore,
     AsyncDummyUnitOfWorkWithEvents,
     AsyncEventstreamTransport,
     DummyCommand,
@@ -12,7 +13,8 @@ from tests._async.conftest import (
 
 
 async def listen_command(
-    cmd: DummyCommand, uow: AsyncUnitOfWorkTransaction[Repositories]
+    cmd: DummyCommand,
+    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyEventStore],
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)

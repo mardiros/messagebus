@@ -97,20 +97,6 @@ class AsyncFooRepository(AsyncDummyRepository): ...
 Repositories = AsyncDummyRepository | AsyncFooRepository
 
 
-class AsyncDummyUnitOfWork(AsyncAbstractUnitOfWork[Repositories]):
-    def __init__(self) -> None:
-        super().__init__()
-        self.status = "init"
-        self.foos = AsyncFooRepository()
-        self.bars = AsyncDummyRepository()
-
-    async def commit(self) -> None:
-        self.status = "committed"
-
-    async def rollback(self) -> None:
-        self.status = "aborted"
-
-
 class AsyncEventstreamTransport(AsyncAbstractEventstreamTransport):
     events: MutableSequence[Mapping[str, Any]]
 
@@ -132,7 +118,23 @@ class AsyncDummyEventStore(AsyncEventstoreAbstractRepository):
         self.messages.append(message)
 
 
-class AsyncDummyUnitOfWorkWithEvents(AsyncAbstractUnitOfWork[Repositories]):
+class AsyncDummyUnitOfWork(AsyncAbstractUnitOfWork[Repositories, AsyncDummyEventStore]):
+    def __init__(self) -> None:
+        super().__init__()
+        self.status = "init"
+        self.foos = AsyncFooRepository()
+        self.bars = AsyncDummyRepository()
+
+    async def commit(self) -> None:
+        self.status = "committed"
+
+    async def rollback(self) -> None:
+        self.status = "aborted"
+
+
+class AsyncDummyUnitOfWorkWithEvents(
+    AsyncAbstractUnitOfWork[Repositories, AsyncDummyEventStore]
+):
     def __init__(self, publisher: AsyncEventstreamPublisher | None) -> None:
         self.foos = AsyncFooRepository()
         self.bars = AsyncDummyRepository()
@@ -181,7 +183,7 @@ async def uow() -> AsyncIterator[AsyncDummyUnitOfWork]:
 @pytest.fixture
 async def tuow(
     uow: AsyncDummyUnitOfWork,
-) -> AsyncIterator[AsyncUnitOfWorkTransaction[Repositories]]:
+) -> AsyncIterator[AsyncUnitOfWorkTransaction[Repositories, AsyncDummyEventStore]]:
     async with uow as tuow:
         yield tuow
         await tuow.rollback()

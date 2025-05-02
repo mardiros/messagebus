@@ -23,6 +23,7 @@ from messagebus.service._sync.dependency import (
 from messagebus.service._sync.unit_of_work import (
     SyncUnitOfWorkTransaction,
     TRepositories,
+    TSyncEventstore,
     TSyncUow,
 )
 
@@ -128,7 +129,7 @@ class SyncMessageBus(Generic[TRepositories]):
     def handle(
         self,
         command: GenericCommand[Any],
-        uow: SyncUnitOfWorkTransaction[TRepositories],
+        uow: SyncUnitOfWorkTransaction[TRepositories, TSyncEventstore],
         **transient_dependencies: Any,
     ) -> Any:
         """

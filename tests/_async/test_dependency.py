@@ -9,6 +9,7 @@ from messagebus.service._async.unit_of_work import (
     AsyncUnitOfWorkTransaction,
 )
 from tests._async.conftest import (
+    AsyncDummyEventStore,
     AsyncDummyUnitOfWorkWithEvents,
     AsyncEventstreamTransport,
     DummyCommand,
@@ -21,7 +22,7 @@ from tests._async.conftest import (
 
 async def listen_command(
     cmd: DummyCommand,
-    uow: AsyncUnitOfWorkTransaction[Repositories],
+    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyEventStore],
     notifier: Notifier,
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
@@ -62,7 +63,7 @@ class TransientDependency(AsyncDependency):
 
 async def listen_with_transient(
     command: DummyCommand,
-    uow: AsyncAbstractUnitOfWork[Any],
+    uow: AsyncAbstractUnitOfWork[Any, Any],
     tracker: TransientDependency,
 ):
     tracker.tracks.append("tracked")
@@ -101,7 +102,7 @@ async def test_transient_dependency_missing(
 
 async def listen_with_optional(
     command: DummyCommand,
-    uow: AsyncAbstractUnitOfWork[Any],
+    uow: AsyncAbstractUnitOfWork[Any, Any],
     tracker: TransientDependency | None = None,
 ):
     if tracker:

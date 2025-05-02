@@ -9,6 +9,7 @@ from tests._sync.conftest import (
     DummyModel,
     Notifier,
     Repositories,
+    SyncDummyEventStore,
     SyncUnitOfWorkTransaction,
 )
 from tests._sync.handlers import dummy
@@ -17,7 +18,8 @@ conftest_mod = __name__.replace("test_registry", "conftest")
 
 
 def listen_command(
-    cmd: DummyCommand, uow: SyncUnitOfWorkTransaction[Repositories]
+    cmd: DummyCommand,
+    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyEventStore],
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)
@@ -26,7 +28,9 @@ def listen_command(
     return foo
 
 
-def listen_event(cmd: DummyEvent, uow: SyncUnitOfWorkTransaction[Repositories]) -> None:
+def listen_event(
+    cmd: DummyEvent, uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyEventStore]
+) -> None:
     """This event is indented to be fire by the message bus."""
     rfoo = uow.foos.get(cmd.id)
     foo = rfoo.unwrap()
@@ -35,7 +39,7 @@ def listen_event(cmd: DummyEvent, uow: SyncUnitOfWorkTransaction[Repositories]) 
 
 def test_messagebus(
     bus: SyncMessageBus[Repositories],
-    tuow: SyncUnitOfWorkTransaction[Repositories],
+    tuow: SyncUnitOfWorkTransaction[Repositories, SyncDummyEventStore],
 ):
     """
     Test that the message bus is firing command and event.
@@ -76,7 +80,7 @@ def test_messagebus(
 
 def test_messagebus_handle_only_message(
     bus: SyncMessageBus[Repositories],
-    tuow: SyncUnitOfWorkTransaction[Repositories],
+    tuow: SyncUnitOfWorkTransaction[Repositories, SyncDummyEventStore],
 ):
     class Msg:
         def __repr__(self):
@@ -170,7 +174,7 @@ def test_scan_relative(bus: SyncMessageBus[Any]):
 
 def listen_command_with_dependency(
     cmd: DummyCommand,
-    uow: SyncUnitOfWorkTransaction[Repositories],
+    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyEventStore],
     dummy_dep: Notifier,
     dummy_dep2: Notifier | None = None,
 ) -> DummyModel:
@@ -181,7 +185,7 @@ def listen_command_with_dependency(
 
 
 def test_messagebus_dependency(
-    uow: SyncUnitOfWorkTransaction[Repositories],
+    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyEventStore],
 ):
     d: dict[str, str] = {}
     bus = SyncMessageBus[Repositories](dummy_dep=d)

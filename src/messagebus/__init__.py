@@ -16,6 +16,7 @@ from .domain.model import (
     Metadata,
     Model,
     TMetadata,
+    TransactionStatus,
 )
 from .service._async.dependency import AsyncDependency
 from .service._async.eventstream import (
@@ -91,6 +92,7 @@ __all__ = [
     "SyncSinkholeMessageStoreRepository",
     "SyncSinkholeEventstreamTransport",
     "SyncUnitOfWorkTransaction",
+    "TransactionStatus",
     # Registry
     "async_listen",
     "sync_listen",

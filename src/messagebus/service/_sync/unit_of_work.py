@@ -13,13 +13,13 @@ from messagebus.domain.model import Message
 if TYPE_CHECKING:
     from messagebus.service._sync.dependency import SyncDependency  # coverage: ignore
 from messagebus.service._sync.repository import (
+    SyncAbstractMessageStoreRepository,
     SyncAbstractRepository,
-    SyncMessageStoreAbstractRepository,
     SyncSinkholeMessageStoreRepository,
 )
 
 TSyncMessageStore = TypeVar(
-    "TSyncMessageStore", bound=SyncMessageStoreAbstractRepository
+    "TSyncMessageStore", bound=SyncAbstractMessageStoreRepository
 )
 
 
@@ -77,7 +77,7 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories, TSyncMessageStore]):
         return getattr(self.uow, name)
 
     @property
-    def messagestore(self) -> SyncMessageStoreAbstractRepository:
+    def messagestore(self) -> SyncAbstractMessageStoreRepository:
         return self.uow.messagestore
 
     def add_listener(self, listener: SyncDependency) -> SyncDependency:

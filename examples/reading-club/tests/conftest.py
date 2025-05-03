@@ -21,10 +21,10 @@ from messagebus import (
     AsyncMessageBus,
     Message,
 )
-from messagebus.service._async.repository import AsyncMessageStoreAbstractRepository
+from messagebus.service._async.repository import AsyncAbstractMessageStoreRepository
 
 
-class InMemoryMessageStoreRepository(AsyncMessageStoreAbstractRepository):
+class InMemoryMessageStoreRepository(AsyncAbstractMessageStoreRepository):
     messages: ClassVar[MutableSequence[Message[Any]]] = []
 
     async def _add(self, message: Message[Any]) -> None:

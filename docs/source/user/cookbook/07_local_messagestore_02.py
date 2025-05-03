@@ -6,7 +6,7 @@ import pytest
 from reading_club.domain.model import Book
 from reading_club.service.repositories import (
     AbstractBookRepository,
-    AsyncMessageStoreAbstractRepository,
+    AsyncAbstractMessageStoreRepository,
     BookRepositoryError,
     BookRepositoryOperationResult,
     BookRepositoryResult,
@@ -21,7 +21,7 @@ from messagebus import (
 )
 
 
-class InMemoryMessageStoreRepository(AsyncMessageStoreAbstractRepository):
+class InMemoryMessageStoreRepository(AsyncAbstractMessageStoreRepository):
     messages: ClassVar[MutableSequence[Message[Any]]] = []
 
     async def _add(self, message: Message[Any]) -> None:

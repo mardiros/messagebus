@@ -24,8 +24,8 @@ from messagebus.service._sync.eventstream import (
 )
 from messagebus.service._sync.registry import SyncMessageBus
 from messagebus.service._sync.repository import (
+    SyncAbstractMessageStoreRepository,
     SyncAbstractRepository,
-    SyncMessageStoreAbstractRepository,
 )
 from messagebus.service._sync.unit_of_work import (
     SyncAbstractUnitOfWork,
@@ -107,7 +107,7 @@ class SyncEventstreamTransport(SyncAbstractEventstreamTransport):
         self.events.append(message)
 
 
-class SyncDummyMessageStore(SyncMessageStoreAbstractRepository):
+class SyncDummyMessageStore(SyncAbstractMessageStoreRepository):
     messages: MutableSequence[Message[MyMetadata]]
 
     def __init__(self, publisher: SyncEventstreamPublisher | None):

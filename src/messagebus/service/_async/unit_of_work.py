@@ -13,13 +13,13 @@ from messagebus.domain.model import Message
 if TYPE_CHECKING:
     from messagebus.service._async.dependency import AsyncDependency  # coverage: ignore
 from messagebus.service._async.repository import (
+    AsyncAbstractMessageStoreRepository,
     AsyncAbstractRepository,
-    AsyncMessageStoreAbstractRepository,
     AsyncSinkholeMessageStoreRepository,
 )
 
 TAsyncMessageStore = TypeVar(
-    "TAsyncMessageStore", bound=AsyncMessageStoreAbstractRepository
+    "TAsyncMessageStore", bound=AsyncAbstractMessageStoreRepository
 )
 
 
@@ -77,7 +77,7 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncMessageStore]):
         return getattr(self.uow, name)
 
     @property
-    def messagestore(self) -> AsyncMessageStoreAbstractRepository:
+    def messagestore(self) -> AsyncAbstractMessageStoreRepository:
         return self.uow.messagestore
 
     def add_listener(self, listener: AsyncDependency) -> AsyncDependency:

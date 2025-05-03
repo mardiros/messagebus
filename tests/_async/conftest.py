@@ -24,8 +24,8 @@ from messagebus.service._async.eventstream import (
 )
 from messagebus.service._async.registry import AsyncMessageBus
 from messagebus.service._async.repository import (
+    AsyncAbstractMessageStoreRepository,
     AsyncAbstractRepository,
-    AsyncMessageStoreAbstractRepository,
 )
 from messagebus.service._async.unit_of_work import (
     AsyncAbstractUnitOfWork,
@@ -107,7 +107,7 @@ class AsyncEventstreamTransport(AsyncAbstractEventstreamTransport):
         self.events.append(message)
 
 
-class AsyncDummyMessageStore(AsyncMessageStoreAbstractRepository):
+class AsyncDummyMessageStore(AsyncAbstractMessageStoreRepository):
     messages: MutableSequence[Message[MyMetadata]]
 
     def __init__(self, publisher: AsyncEventstreamPublisher | None):

@@ -29,8 +29,8 @@ from .service._async.repository import (
     AsyncSinkholeMessageStoreRepository,
 )
 from .service._async.unit_of_work import (
+    AsyncAbstractMessageStoreRepository,
     AsyncAbstractUnitOfWork,
-    AsyncMessageStoreAbstractRepository,
     AsyncUnitOfWorkTransaction,
     TAsyncMessageStore,
 )
@@ -46,8 +46,8 @@ from .service._sync.repository import (
     SyncSinkholeMessageStoreRepository,
 )
 from .service._sync.unit_of_work import (
+    SyncAbstractMessageStoreRepository,
     SyncAbstractUnitOfWork,
-    SyncMessageStoreAbstractRepository,
     SyncUnitOfWorkTransaction,
     TSyncMessageStore,
 )
@@ -64,7 +64,7 @@ __all__ = [
     # Unit of work
     "AsyncAbstractUnitOfWork",
     "TAsyncMessageStore",
-    "AsyncMessageStoreAbstractRepository",
+    "AsyncAbstractMessageStoreRepository",
     "AsyncEventstreamPublisher",
     "AsyncMessageBus",
     "AsyncSinkholeMessageStoreRepository",
@@ -85,7 +85,7 @@ __all__ = [
     "SyncAbstractRepository",
     "SyncAbstractUnitOfWork",
     "TSyncMessageStore",
-    "SyncMessageStoreAbstractRepository",
+    "SyncAbstractMessageStoreRepository",
     "SyncEventstreamPublisher",
     "SyncMessageBus",
     "SyncSinkholeMessageStoreRepository",

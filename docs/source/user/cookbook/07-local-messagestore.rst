@@ -16,8 +16,8 @@ For the moment, we will replace the default repository (
 and write our own one that store them in memory.
 
 An ``MessageStoreRepository`` is a :term:`repository` for all the local events,
-its override the :class:`messagebus.AsyncMessageStoreAbstractRepository`.
-Only the abstract method :meth:`messagebus.AsyncMessageStoreAbstractRepository._add`
+its override the :class:`messagebus.AsyncAbstractMessageStoreRepository`.
+Only the abstract method :meth:`messagebus.AsyncAbstractMessageStoreRepository._add`
 needs to be implemented.
 
 
@@ -35,7 +35,7 @@ Finally, we can update the tests to ensure that the message is stored.
 .. literalinclude:: 07_local_messagestore_03.py
 
 Note that there is now way to retrieve message from a
-:class:`messagebus.AsyncMessageStoreAbstractRepository`.
+:class:`messagebus.AsyncAbstractMessageStoreRepository`.
 The repository is made to be a write only interface. This is why,
 while testing, we add a ``# type: ignore`` by reading from our implementation detail.
 

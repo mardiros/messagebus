@@ -2,15 +2,15 @@ from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from messagebus import (
+    AsyncAbstractMessageStoreRepository,
     AsyncEventstreamPublisher,
-    AsyncMessageStoreAbstractRepository,
     Message,
 )
 
 from . import orm
 
 
-class SQLMessageStoreRepository(AsyncMessageStoreAbstractRepository):
+class SQLMessageStoreRepository(AsyncAbstractMessageStoreRepository):
     def __init__(self, session: AsyncSession, publisher: AsyncEventstreamPublisher):
         super().__init__(publisher)
         self.session = session

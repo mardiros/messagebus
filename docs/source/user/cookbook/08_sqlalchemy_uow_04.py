@@ -11,14 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from messagebus import (
     AsyncAbstractEventstreamTransport,
-    AsyncEventstoreAbstractRepository,
     AsyncEventstreamPublisher,
+    AsyncMessageStoreAbstractRepository,
     AsyncUnitOfWorkTransaction,
     Message,
 )
 
 
-class SQLEventstoreRepository(AsyncEventstoreAbstractRepository):
+class SQLMessageStoreRepository(AsyncMessageStoreAbstractRepository):
     def __init__(self, session: AsyncSession, publisher: AsyncEventstreamPublisher):
         super().__init__(publisher)
         self.session = session
@@ -55,7 +55,7 @@ class SQLUnitOfWork(AbstractUnitOfWork):
     async def __aenter__(self) -> AsyncUnitOfWorkTransaction:
         self.messages = []
         self.session = self.session_factory()
-        self.eventstore = SQLEventstoreRepository(
+        self.messagestore = SQLMessageStoreRepository(
             self.session,
             AsyncEventstreamPublisher(self.transport),
         )

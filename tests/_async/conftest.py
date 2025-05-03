@@ -25,7 +25,7 @@ from messagebus.service._async.eventstream import (
 from messagebus.service._async.registry import AsyncMessageBus
 from messagebus.service._async.repository import (
     AsyncAbstractRepository,
-    AsyncEventstoreAbstractRepository,
+    AsyncMessageStoreAbstractRepository,
 )
 from messagebus.service._async.unit_of_work import (
     AsyncAbstractUnitOfWork,
@@ -107,7 +107,7 @@ class AsyncEventstreamTransport(AsyncAbstractEventstreamTransport):
         self.events.append(message)
 
 
-class AsyncDummyEventStore(AsyncEventstoreAbstractRepository):
+class AsyncDummyMessageStore(AsyncMessageStoreAbstractRepository):
     messages: MutableSequence[Message[MyMetadata]]
 
     def __init__(self, publisher: AsyncEventstreamPublisher | None):
@@ -118,7 +118,9 @@ class AsyncDummyEventStore(AsyncEventstoreAbstractRepository):
         self.messages.append(message)
 
 
-class AsyncDummyUnitOfWork(AsyncAbstractUnitOfWork[Repositories, AsyncDummyEventStore]):
+class AsyncDummyUnitOfWork(
+    AsyncAbstractUnitOfWork[Repositories, AsyncDummyMessageStore]
+):
     def __init__(self) -> None:
         super().__init__()
         self.status = "init"
@@ -133,12 +135,12 @@ class AsyncDummyUnitOfWork(AsyncAbstractUnitOfWork[Repositories, AsyncDummyEvent
 
 
 class AsyncDummyUnitOfWorkWithEvents(
-    AsyncAbstractUnitOfWork[Repositories, AsyncDummyEventStore]
+    AsyncAbstractUnitOfWork[Repositories, AsyncDummyMessageStore]
 ):
     def __init__(self, publisher: AsyncEventstreamPublisher | None) -> None:
         self.foos = AsyncFooRepository()
         self.bars = AsyncDummyRepository()
-        self.eventstore = AsyncDummyEventStore(publisher=publisher)
+        self.messagestore = AsyncDummyMessageStore(publisher=publisher)
 
     async def commit(self) -> None: ...
 
@@ -183,7 +185,7 @@ async def uow() -> AsyncIterator[AsyncDummyUnitOfWork]:
 @pytest.fixture
 async def tuow(
     uow: AsyncDummyUnitOfWork,
-) -> AsyncIterator[AsyncUnitOfWorkTransaction[Repositories, AsyncDummyEventStore]]:
+) -> AsyncIterator[AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore]]:
     async with uow as tuow:
         yield tuow
         await tuow.rollback()
@@ -202,19 +204,19 @@ async def eventstream_pub(
 
 
 @pytest.fixture
-async def eventstore(
+async def messagestore(
     eventstream_pub: AsyncEventstreamPublisher,
-) -> AsyncDummyEventStore:
-    return AsyncDummyEventStore(eventstream_pub)
+) -> AsyncDummyMessageStore:
+    return AsyncDummyMessageStore(eventstream_pub)
 
 
 @pytest.fixture
-async def uow_with_eventstore(
+async def uow_with_messagestore(
     eventstream_pub: AsyncEventstreamPublisher,
 ) -> AsyncIterator[AsyncDummyUnitOfWorkWithEvents]:
     uow = AsyncDummyUnitOfWorkWithEvents(eventstream_pub)
     yield uow
-    uow.eventstore.messages.clear()  # type: ignore
+    uow.messagestore.messages.clear()  # type: ignore
     uow.foos.models.clear()
     uow.foos.seen.clear()
     uow.bars.models.clear()

@@ -1,40 +1,40 @@
-from messagebus.service._async.registry import AsyncMessageBus
-from messagebus.service._async.unit_of_work import AsyncUnitOfWorkTransaction
-from tests._async.conftest import (
-    AsyncDummyEventStore,
-    AsyncDummyUnitOfWorkWithEvents,
-    AsyncEventstreamTransport,
+from messagebus.service._sync.registry import SyncMessageBus
+from messagebus.service._sync.unit_of_work import SyncUnitOfWorkTransaction
+from tests._sync.conftest import (
     DummyCommand,
     DummyEvent,
     DummyModel,
     MyMetadata,
     Repositories,
+    SyncDummyMessageStore,
+    SyncDummyUnitOfWorkWithEvents,
+    SyncEventstreamTransport,
 )
 
 
-async def listen_command(
+def listen_command(
     cmd: DummyCommand,
-    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyEventStore],
+    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore],
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)
     foo.messages.append(DummyEvent(id=foo.id, increment=10))
-    await uow.foos.add(foo)
+    uow.foos.add(foo)
     return foo
 
 
-async def test_store_events_and_publish(
-    bus: AsyncMessageBus[Repositories],
-    eventstream_transport: AsyncEventstreamTransport,
-    uow_with_eventstore: AsyncDummyUnitOfWorkWithEvents,
+def test_store_events_and_publish(
+    bus: SyncMessageBus[Repositories],
+    eventstream_transport: SyncEventstreamTransport,
+    uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
 ):
     bus.add_listener(DummyCommand, listen_command)
-    async with uow_with_eventstore as tuow:
-        await bus.handle(dummy_command, tuow)
-        await tuow.commit()
+    with uow_with_messagestore as tuow:
+        bus.handle(dummy_command, tuow)
+        tuow.commit()
 
-    assert uow_with_eventstore.eventstore.messages == [  # type: ignore
+    assert uow_with_messagestore.messagestore.messages == [  # type: ignore
         DummyCommand(
             metadata=MyMetadata(
                 name="dummy", schema_version=1, published=False, custom_field="foo"
@@ -49,7 +49,7 @@ async def test_store_events_and_publish(
             increment=10,
         ),
     ]
-    evt: DummyEvent = uow_with_eventstore.eventstore.messages[1]  # type: ignore
+    evt: DummyEvent = uow_with_messagestore.messagestore.messages[1]  # type: ignore
     assert eventstream_transport.events == [
         {
             "created_at": evt.created_at.isoformat(),
@@ -60,14 +60,14 @@ async def test_store_events_and_publish(
     ]
 
 
-async def test_store_events_and_rollback(
-    bus: AsyncMessageBus[Repositories],
-    eventstream_transport: AsyncEventstreamTransport,
-    uow_with_eventstore: AsyncDummyUnitOfWorkWithEvents,
+def test_store_events_and_rollback(
+    bus: SyncMessageBus[Repositories],
+    eventstream_transport: SyncEventstreamTransport,
+    uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
 ):
     bus.add_listener(DummyCommand, listen_command)
-    async with uow_with_eventstore as tuow:
-        await bus.handle(dummy_command, tuow)
-        await tuow.rollback()
+    with uow_with_messagestore as tuow:
+        bus.handle(dummy_command, tuow)
+        tuow.rollback()
     assert eventstream_transport.events == []

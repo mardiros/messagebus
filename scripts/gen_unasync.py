@@ -11,7 +11,7 @@ unasync.unasync_files(
             additional_replacements={
                 "_async": "_sync",
                 "TAsyncUow": "TSyncUow",
-                "TAsyncEventstore": "TSyncEventstore",
+                "TAsyncMessageStore": "TSyncMessageStore",
                 "async_listen": "sync_listen",
             },
         ),

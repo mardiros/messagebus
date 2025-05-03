@@ -22,7 +22,7 @@ from messagebus.service._async.dependency import (
 )
 from messagebus.service._async.unit_of_work import (
     AsyncUnitOfWorkTransaction,
-    TAsyncEventstore,
+    TAsyncMessageStore,
     TAsyncUow,
     TRepositories,
 )
@@ -131,7 +131,7 @@ class AsyncMessageBus(Generic[TRepositories]):
     async def handle(
         self,
         command: GenericCommand[Any],
-        uow: AsyncUnitOfWorkTransaction[TRepositories, TAsyncEventstore],
+        uow: AsyncUnitOfWorkTransaction[TRepositories, TAsyncMessageStore],
         **transient_dependencies: Any,
     ) -> Any:
         """
@@ -163,7 +163,7 @@ class AsyncMessageBus(Generic[TRepositories]):
                 for msghook in self.events_registry[msg_type]:  # type: ignore
                     await msghook(cast(GenericEvent[Any], message), uow, dependencies)
                     queue.extend(uow.uow.collect_new_events())
-            await uow.eventstore.add(message)
+            await uow.messagestore.add(message)
             idx += 1
         return ret
 

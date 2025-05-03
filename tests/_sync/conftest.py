@@ -25,7 +25,7 @@ from messagebus.service._sync.eventstream import (
 from messagebus.service._sync.registry import SyncMessageBus
 from messagebus.service._sync.repository import (
     SyncAbstractRepository,
-    SyncEventstoreAbstractRepository,
+    SyncMessageStoreAbstractRepository,
 )
 from messagebus.service._sync.unit_of_work import (
     SyncAbstractUnitOfWork,
@@ -107,7 +107,7 @@ class SyncEventstreamTransport(SyncAbstractEventstreamTransport):
         self.events.append(message)
 
 
-class SyncDummyEventStore(SyncEventstoreAbstractRepository):
+class SyncDummyMessageStore(SyncMessageStoreAbstractRepository):
     messages: MutableSequence[Message[MyMetadata]]
 
     def __init__(self, publisher: SyncEventstreamPublisher | None):
@@ -118,7 +118,7 @@ class SyncDummyEventStore(SyncEventstoreAbstractRepository):
         self.messages.append(message)
 
 
-class SyncDummyUnitOfWork(SyncAbstractUnitOfWork[Repositories, SyncDummyEventStore]):
+class SyncDummyUnitOfWork(SyncAbstractUnitOfWork[Repositories, SyncDummyMessageStore]):
     def __init__(self) -> None:
         super().__init__()
         self.status = "init"
@@ -133,12 +133,12 @@ class SyncDummyUnitOfWork(SyncAbstractUnitOfWork[Repositories, SyncDummyEventSto
 
 
 class SyncDummyUnitOfWorkWithEvents(
-    SyncAbstractUnitOfWork[Repositories, SyncDummyEventStore]
+    SyncAbstractUnitOfWork[Repositories, SyncDummyMessageStore]
 ):
     def __init__(self, publisher: SyncEventstreamPublisher | None) -> None:
         self.foos = SyncFooRepository()
         self.bars = SyncDummyRepository()
-        self.eventstore = SyncDummyEventStore(publisher=publisher)
+        self.messagestore = SyncDummyMessageStore(publisher=publisher)
 
     def commit(self) -> None: ...
 
@@ -183,7 +183,7 @@ def uow() -> Iterator[SyncDummyUnitOfWork]:
 @pytest.fixture
 def tuow(
     uow: SyncDummyUnitOfWork,
-) -> Iterator[SyncUnitOfWorkTransaction[Repositories, SyncDummyEventStore]]:
+) -> Iterator[SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore]]:
     with uow as tuow:
         yield tuow
         tuow.rollback()
@@ -202,19 +202,19 @@ def eventstream_pub(
 
 
 @pytest.fixture
-def eventstore(
+def messagestore(
     eventstream_pub: SyncEventstreamPublisher,
-) -> SyncDummyEventStore:
-    return SyncDummyEventStore(eventstream_pub)
+) -> SyncDummyMessageStore:
+    return SyncDummyMessageStore(eventstream_pub)
 
 
 @pytest.fixture
-def uow_with_eventstore(
+def uow_with_messagestore(
     eventstream_pub: SyncEventstreamPublisher,
 ) -> Iterator[SyncDummyUnitOfWorkWithEvents]:
     uow = SyncDummyUnitOfWorkWithEvents(eventstream_pub)
     yield uow
-    uow.eventstore.messages.clear()  # type: ignore
+    uow.messagestore.messages.clear()  # type: ignore
     uow.foos.models.clear()
     uow.foos.seen.clear()
     uow.bars.models.clear()

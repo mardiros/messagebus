@@ -14,11 +14,13 @@ if TYPE_CHECKING:
     from messagebus.service._async.dependency import AsyncDependency  # coverage: ignore
 from messagebus.service._async.repository import (
     AsyncAbstractRepository,
-    AsyncEventstoreAbstractRepository,
-    AsyncSinkholeEventstoreRepository,
+    AsyncMessageStoreAbstractRepository,
+    AsyncSinkholeMessageStoreRepository,
 )
 
-TAsyncEventstore = TypeVar("TAsyncEventstore", bound=AsyncEventstoreAbstractRepository)
+TAsyncMessageStore = TypeVar(
+    "TAsyncMessageStore", bound=AsyncMessageStoreAbstractRepository
+)
 
 
 class TransactionError(RuntimeError):
@@ -49,7 +51,7 @@ class TransactionStatus(enum.Enum):
 TRepositories = TypeVar("TRepositories", bound=AsyncAbstractRepository[Any])
 
 
-class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncEventstore]):
+class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncMessageStore]):
     """
     Context manager for business transactions of the unit of work.
 
@@ -59,13 +61,13 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncEventstore]):
     of detached for streaming purpose.
     """
 
-    uow: AsyncAbstractUnitOfWork[TRepositories, TAsyncEventstore]
+    uow: AsyncAbstractUnitOfWork[TRepositories, TAsyncMessageStore]
     """Associated unit of work instance manipulated in the transaction."""
     status: TransactionStatus
     """Current status of the transaction"""
 
     def __init__(
-        self, uow: AsyncAbstractUnitOfWork[TRepositories, TAsyncEventstore]
+        self, uow: AsyncAbstractUnitOfWork[TRepositories, TAsyncMessageStore]
     ) -> None:
         self.status = TransactionStatus.running
         self.uow = uow
@@ -75,8 +77,8 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncEventstore]):
         return getattr(self.uow, name)
 
     @property
-    def eventstore(self) -> AsyncEventstoreAbstractRepository:
-        return self.uow.eventstore
+    def messagestore(self) -> AsyncMessageStoreAbstractRepository:
+        return self.uow.messagestore
 
     def add_listener(self, listener: AsyncDependency) -> AsyncDependency:
         self._hooks.append(listener)
@@ -116,7 +118,7 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncEventstore]):
 
     async def __aenter__(
         self,
-    ) -> AsyncUnitOfWorkTransaction[TRepositories, TAsyncEventstore]:
+    ) -> AsyncUnitOfWorkTransaction[TRepositories, TAsyncMessageStore]:
         """Entering the transaction."""
         if self.status != TransactionStatus.running:
             raise TransactionError("Invalid transaction status.")
@@ -144,7 +146,7 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncEventstore]):
                 "Transaction must be explicitly close. Missing commit/rollback call."
             )
         if self.status == TransactionStatus.committed:
-            await self.uow.eventstore.publish_eventstream()
+            await self.uow.messagestore.publish_eventstream()
         self.status = TransactionStatus.closed
 
     async def close(self) -> None:
@@ -160,7 +162,7 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncEventstore]):
         await self._close()
 
 
-class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TAsyncEventstore]):
+class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TAsyncMessageStore]):
     """
     Abstract unit of work.
 
@@ -169,7 +171,7 @@ class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TAsyncEventstore])
     has to be declared has attributes.
     """
 
-    eventstore: TAsyncEventstore = AsyncSinkholeEventstoreRepository()  # type: ignore
+    messagestore: TAsyncMessageStore = AsyncSinkholeMessageStoreRepository()  # type: ignore
 
     def collect_new_events(self) -> Iterator[Message[Any]]:
         for repo in self._iter_repositories():
@@ -188,7 +190,7 @@ class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TAsyncEventstore])
 
     async def __aenter__(
         self,
-    ) -> AsyncUnitOfWorkTransaction[TRepositories, TAsyncEventstore]:
+    ) -> AsyncUnitOfWorkTransaction[TRepositories, TAsyncMessageStore]:
         self.__transaction = AsyncUnitOfWorkTransaction(self)
         await self.__transaction.__aenter__()
         return self.__transaction

@@ -26,7 +26,7 @@ class AsyncAbstractRepository(abc.ABC, Generic[TModel_contra]):
     seen: MutableSequence[TModel_contra]
 
 
-class AsyncEventstoreAbstractRepository(abc.ABC):
+class AsyncMessageStoreAbstractRepository(abc.ABC):
     def __init__(self, publisher: AsyncEventstreamPublisher | None = None) -> None:
         self.publisher = publisher
         self.stream_buffer: MutableSequence[Message[Any]] = []
@@ -61,8 +61,8 @@ class AsyncEventstoreAbstractRepository(abc.ABC):
             await self.publisher.send_message(message)
 
 
-class AsyncSinkholeEventstoreRepository(AsyncEventstoreAbstractRepository):
-    """An eventstore that drop all the message."""
+class AsyncSinkholeMessageStoreRepository(AsyncMessageStoreAbstractRepository):
+    """A messagestore that drop all the message."""
 
     async def _add(self, message: Message[Any]) -> None:
         """Do nothing. The sinkhole drop every message."""

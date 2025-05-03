@@ -23,7 +23,7 @@ from messagebus.service._sync.dependency import (
 from messagebus.service._sync.unit_of_work import (
     SyncUnitOfWorkTransaction,
     TRepositories,
-    TSyncEventstore,
+    TSyncMessageStore,
     TSyncUow,
 )
 
@@ -129,7 +129,7 @@ class SyncMessageBus(Generic[TRepositories]):
     def handle(
         self,
         command: GenericCommand[Any],
-        uow: SyncUnitOfWorkTransaction[TRepositories, TSyncEventstore],
+        uow: SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore],
         **transient_dependencies: Any,
     ) -> Any:
         """
@@ -161,7 +161,7 @@ class SyncMessageBus(Generic[TRepositories]):
                 for msghook in self.events_registry[msg_type]:  # type: ignore
                     msghook(cast(GenericEvent[Any], message), uow, dependencies)
                     queue.extend(uow.uow.collect_new_events())
-            uow.eventstore.add(message)
+            uow.messagestore.add(message)
             idx += 1
         return ret
 

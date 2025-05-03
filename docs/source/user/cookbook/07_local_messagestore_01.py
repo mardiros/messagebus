@@ -1,10 +1,10 @@
 from collections.abc import MutableSequence
 from typing import Any, ClassVar
 
-from messagebus import AsyncEventstoreAbstractRepository, Message
+from messagebus import AsyncMessageStoreAbstractRepository, Message
 
 
-class InMemoryEventstoreRepository(AsyncEventstoreAbstractRepository):
+class InMemoryMessageStoreRepository(AsyncMessageStoreAbstractRepository):
     messages: ClassVar[MutableSequence[Message[Any]]] = []
 
     async def _add(self, message: Message[Any]) -> None:

@@ -46,7 +46,7 @@ Now lets run our tests
     tests/uow_sqla/test_repositories.py::test_book_add_err[params0] PASSED
     tests/uow_sqla/test_repositories.py::test_book_by_id[return a known book] PASSED
     tests/uow_sqla/test_repositories.py::test_book_by_id[return an error] PASSED
-    tests/uow_sqla/test_repositories.py::test_eventstore_add PASSED
+    tests/uow_sqla/test_repositories.py::test_messagestore_add PASSED
     tests/uow_sqla/test_transaction.py::test_commit PASSED
     tests/uow_sqla/test_transaction.py::test_rollback PASSED
     =========================== 9 passed in 0.48s ===========================
@@ -89,7 +89,7 @@ Run our tests
     tests/uow_sqla/test_repositories.py::test_book_add_err[params0] PASSED
     tests/uow_sqla/test_repositories.py::test_book_by_id[return a known book] PASSED
     tests/uow_sqla/test_repositories.py::test_book_by_id[return an error] PASSED
-    tests/uow_sqla/test_repositories.py::test_eventstore_add PASSED
+    tests/uow_sqla/test_repositories.py::test_messagestore_add PASSED
     tests/uow_sqla/test_transaction.py::test_commit PASSED
     tests/uow_sqla/test_transaction.py::test_rollback PASSED
     ========================== 10 passed in 0.48s ===========================

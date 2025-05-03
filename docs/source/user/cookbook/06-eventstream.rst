@@ -44,11 +44,11 @@ At that moment, have to implement the transport in our conftest.py file
 .. literalinclude:: 06_eventstream_03.py
    :emphasize-lines: 23,61-63,82-84,88-89
 
-First, we create an Eventstream Transport that store events in a list, and expose it as
-a fixture. The transport is also configured to override the ``eventstore`` property
-of the unit of work. We reuse the ``AsyncSinkholeEventstoreRepository`` repository.
+First, we create an Eventstream Transport that store messages in a list, and expose it
+as a fixture. The transport is also configured to override the ``messagestore`` property
+of the unit of work. We reuse the ``AsyncSinkholeMessageStoreRepository`` repository.
 which means that we don't store the events locally, but, we set up our transport,
-having the effect of sending published events to the eventstream. 
+having the effect of sending published events to the eventstream.
 
 Now lets update the code of the service handler to raise the event:
 

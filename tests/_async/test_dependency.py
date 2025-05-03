@@ -9,7 +9,7 @@ from messagebus.service._async.unit_of_work import (
     AsyncUnitOfWorkTransaction,
 )
 from tests._async.conftest import (
-    AsyncDummyEventStore,
+    AsyncDummyMessageStore,
     AsyncDummyUnitOfWorkWithEvents,
     AsyncEventstreamTransport,
     DummyCommand,
@@ -22,7 +22,7 @@ from tests._async.conftest import (
 
 async def listen_command(
     cmd: DummyCommand,
-    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyEventStore],
+    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore],
     notifier: Notifier,
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
@@ -36,12 +36,12 @@ async def listen_command(
 async def test_store_events_and_publish(
     bus: AsyncMessageBus[Repositories],
     eventstream_transport: AsyncEventstreamTransport,
-    uow_with_eventstore: AsyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: AsyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
     notifier: Notifier,
 ):
     bus.add_listener(DummyCommand, listen_command)
-    async with uow_with_eventstore as tuow:
+    async with uow_with_messagestore as tuow:
         await bus.handle(dummy_command, tuow)
         await tuow.commit()
     assert notifier.inbox == [
@@ -72,13 +72,13 @@ async def listen_with_transient(
 async def test_transient_dependency(
     bus: AsyncMessageBus[Repositories],
     eventstream_transport: AsyncEventstreamTransport,
-    uow_with_eventstore: AsyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: AsyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
     notifier: Notifier,
 ):
     tmp = TransientDependency()
     bus.add_listener(DummyCommand, listen_with_transient)
-    async with uow_with_eventstore as tuow:
+    async with uow_with_messagestore as tuow:
         await bus.handle(dummy_command, tuow, tracker=tmp)
         await tuow.commit()
     assert tmp.tracks == ["tracked"]
@@ -88,13 +88,13 @@ async def test_transient_dependency(
 async def test_transient_dependency_missing(
     bus: AsyncMessageBus[Repositories],
     eventstream_transport: AsyncEventstreamTransport,
-    uow_with_eventstore: AsyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: AsyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
     notifier: Notifier,
 ):
     bus.add_listener(DummyCommand, listen_with_transient)
     with pytest.raises(MissingDependencyError) as ctx:
-        async with uow_with_eventstore as tuow:
+        async with uow_with_messagestore as tuow:
             await bus.handle(dummy_command, tuow)
             await tuow.commit()
     assert str(ctx.value) == "Missing messagebus dependency 'tracker'"
@@ -112,13 +112,13 @@ async def listen_with_optional(
 async def test_optional_dependency(
     bus: AsyncMessageBus[Repositories],
     eventstream_transport: AsyncEventstreamTransport,
-    uow_with_eventstore: AsyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: AsyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
     notifier: Notifier,
 ):
     tmp = TransientDependency()
     bus.add_listener(DummyCommand, listen_with_optional)
-    async with uow_with_eventstore as tuow:
+    async with uow_with_messagestore as tuow:
         await bus.handle(dummy_command, tuow, tracker=tmp)
         await tuow.commit()
     assert tmp.tracks == ["optionnaly_tracked"]
@@ -128,12 +128,12 @@ async def test_optional_dependency(
 async def test_optional_dependency_missing(
     bus: AsyncMessageBus[Repositories],
     eventstream_transport: AsyncEventstreamTransport,
-    uow_with_eventstore: AsyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: AsyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
     notifier: Notifier,
 ):
     bus.add_listener(DummyCommand, listen_with_optional)
-    async with uow_with_eventstore as tuow:
+    async with uow_with_messagestore as tuow:
         await bus.handle(dummy_command, tuow)
         await tuow.commit()
     # we tests that there is no issue here

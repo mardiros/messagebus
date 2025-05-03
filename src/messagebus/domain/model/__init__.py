@@ -9,6 +9,7 @@ from .message import (
 )
 from .metadata import Metadata, TMetadata
 from .model import GenericModel, Model
+from .transaction import TransactionStatus
 
 __all__ = [
     "Command",
@@ -20,4 +21,5 @@ __all__ = [
     "Metadata",
     "Model",
     "TMetadata",
+    "TransactionStatus",
 ]

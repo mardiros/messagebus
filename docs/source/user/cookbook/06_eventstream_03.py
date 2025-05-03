@@ -19,7 +19,7 @@ from messagebus import (
     AsyncAbstractEventstreamTransport,
     AsyncEventstreamPublisher,
     AsyncMessageBus,
-    AsyncSinkholeEventstoreRepository,
+    AsyncSinkholeMessageStoreRepository,
 )
 
 
@@ -61,7 +61,7 @@ class InMemoryBookRepository(AbstractBookRepository):
 class InMemoryUnitOfWork(AbstractUnitOfWork):
     def __init__(self, transport: AsyncAbstractEventstreamTransport):
         self.books = InMemoryBookRepository()
-        self.eventstore = AsyncSinkholeEventstoreRepository(
+        self.messagestore = AsyncSinkholeMessageStoreRepository(
             publisher=AsyncEventstreamPublisher(transport)
         )
 

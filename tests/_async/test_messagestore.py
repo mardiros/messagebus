@@ -1,6 +1,7 @@
 from messagebus.service._async.registry import AsyncMessageBus
 from messagebus.service._async.unit_of_work import AsyncUnitOfWorkTransaction
 from tests._async.conftest import (
+    AsyncDummyMessageStore,
     AsyncDummyUnitOfWorkWithEvents,
     AsyncEventstreamTransport,
     DummyCommand,
@@ -12,7 +13,8 @@ from tests._async.conftest import (
 
 
 async def listen_command(
-    cmd: DummyCommand, uow: AsyncUnitOfWorkTransaction[Repositories]
+    cmd: DummyCommand,
+    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore],
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)
@@ -24,15 +26,15 @@ async def listen_command(
 async def test_store_events_and_publish(
     bus: AsyncMessageBus[Repositories],
     eventstream_transport: AsyncEventstreamTransport,
-    uow_with_eventstore: AsyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: AsyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
 ):
     bus.add_listener(DummyCommand, listen_command)
-    async with uow_with_eventstore as tuow:
+    async with uow_with_messagestore as tuow:
         await bus.handle(dummy_command, tuow)
         await tuow.commit()
 
-    assert uow_with_eventstore.eventstore.messages == [  # type: ignore
+    assert uow_with_messagestore.messagestore.messages == [  # type: ignore
         DummyCommand(
             metadata=MyMetadata(
                 name="dummy", schema_version=1, published=False, custom_field="foo"
@@ -47,7 +49,7 @@ async def test_store_events_and_publish(
             increment=10,
         ),
     ]
-    evt: DummyEvent = uow_with_eventstore.eventstore.messages[1]  # type: ignore
+    evt: DummyEvent = uow_with_messagestore.messagestore.messages[1]  # type: ignore
     assert eventstream_transport.events == [
         {
             "created_at": evt.created_at.isoformat(),
@@ -61,11 +63,11 @@ async def test_store_events_and_publish(
 async def test_store_events_and_rollback(
     bus: AsyncMessageBus[Repositories],
     eventstream_transport: AsyncEventstreamTransport,
-    uow_with_eventstore: AsyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: AsyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
 ):
     bus.add_listener(DummyCommand, listen_command)
-    async with uow_with_eventstore as tuow:
+    async with uow_with_messagestore as tuow:
         await bus.handle(dummy_command, tuow)
         await tuow.rollback()
     assert eventstream_transport.events == []

@@ -113,6 +113,7 @@ def test_detach_transaction(uow: SyncDummyUnitOfWork):
         uow.foos.add(DummyModel(id="2", counter=1))
         uow.foos.add(DummyModel(id="3", counter=1))
         tuow.commit()
+
     with uow as tuow:
         iter_foos = uow.foos.find(id="2")
         tuow.detach()

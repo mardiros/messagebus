@@ -6,13 +6,15 @@ from tests._sync.conftest import (
     DummyModel,
     MyMetadata,
     Repositories,
+    SyncDummyMessageStore,
     SyncDummyUnitOfWorkWithEvents,
     SyncEventstreamTransport,
 )
 
 
 def listen_command(
-    cmd: DummyCommand, uow: SyncUnitOfWorkTransaction[Repositories]
+    cmd: DummyCommand,
+    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore],
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)
@@ -24,15 +26,15 @@ def listen_command(
 def test_store_events_and_publish(
     bus: SyncMessageBus[Repositories],
     eventstream_transport: SyncEventstreamTransport,
-    uow_with_eventstore: SyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
 ):
     bus.add_listener(DummyCommand, listen_command)
-    with uow_with_eventstore as tuow:
+    with uow_with_messagestore as tuow:
         bus.handle(dummy_command, tuow)
         tuow.commit()
 
-    assert uow_with_eventstore.eventstore.messages == [  # type: ignore
+    assert uow_with_messagestore.messagestore.messages == [  # type: ignore
         DummyCommand(
             metadata=MyMetadata(
                 name="dummy", schema_version=1, published=False, custom_field="foo"
@@ -47,7 +49,7 @@ def test_store_events_and_publish(
             increment=10,
         ),
     ]
-    evt: DummyEvent = uow_with_eventstore.eventstore.messages[1]  # type: ignore
+    evt: DummyEvent = uow_with_messagestore.messagestore.messages[1]  # type: ignore
     assert eventstream_transport.events == [
         {
             "created_at": evt.created_at.isoformat(),
@@ -61,11 +63,11 @@ def test_store_events_and_publish(
 def test_store_events_and_rollback(
     bus: SyncMessageBus[Repositories],
     eventstream_transport: SyncEventstreamTransport,
-    uow_with_eventstore: SyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
 ):
     bus.add_listener(DummyCommand, listen_command)
-    with uow_with_eventstore as tuow:
+    with uow_with_messagestore as tuow:
         bus.handle(dummy_command, tuow)
         tuow.rollback()
     assert eventstream_transport.events == []

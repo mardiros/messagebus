@@ -24,11 +24,13 @@ from .service._async.eventstream import (
     AsyncSinkholeEventstreamTransport,
 )
 from .service._async.registry import AsyncMessageBus, async_listen
-from .service._async.repository import AsyncAbstractRepository
+from .service._async.repository import (
+    AsyncAbstractRepository,
+    AsyncSinkholeMessageStoreRepository,
+)
 from .service._async.unit_of_work import (
     AsyncAbstractUnitOfWork,
-    AsyncEventstoreAbstractRepository,
-    AsyncSinkholeEventstoreRepository,
+    AsyncMessageStoreAbstractRepository,
     AsyncUnitOfWorkTransaction,
 )
 from .service._sync.dependency import SyncDependency
@@ -38,11 +40,13 @@ from .service._sync.eventstream import (
     SyncSinkholeEventstreamTransport,
 )
 from .service._sync.registry import SyncMessageBus, sync_listen
-from .service._sync.repository import SyncAbstractRepository
+from .service._sync.repository import (
+    SyncAbstractRepository,
+    SyncSinkholeMessageStoreRepository,
+)
 from .service._sync.unit_of_work import (
     SyncAbstractUnitOfWork,
-    SyncEventstoreAbstractRepository,
-    SyncSinkholeEventstoreRepository,
+    SyncMessageStoreAbstractRepository,
     SyncUnitOfWorkTransaction,
 )
 from .service.eventstream import AbstractMessageSerializer
@@ -57,10 +61,10 @@ __all__ = [
     "AsyncAbstractRepository",
     # Unit of work
     "AsyncAbstractUnitOfWork",
-    "AsyncEventstoreAbstractRepository",
+    "AsyncMessageStoreAbstractRepository",
     "AsyncEventstreamPublisher",
     "AsyncMessageBus",
-    "AsyncSinkholeEventstoreRepository",
+    "AsyncSinkholeMessageStoreRepository",
     "AsyncSinkholeEventstreamTransport",
     "AsyncUnitOfWorkTransaction",
     "Command",
@@ -77,10 +81,10 @@ __all__ = [
     "SyncAbstractEventstreamTransport",
     "SyncAbstractRepository",
     "SyncAbstractUnitOfWork",
-    "SyncEventstoreAbstractRepository",
+    "SyncMessageStoreAbstractRepository",
     "SyncEventstreamPublisher",
     "SyncMessageBus",
-    "SyncSinkholeEventstoreRepository",
+    "SyncSinkholeMessageStoreRepository",
     "SyncSinkholeEventstreamTransport",
     "SyncUnitOfWorkTransaction",
     # Registry

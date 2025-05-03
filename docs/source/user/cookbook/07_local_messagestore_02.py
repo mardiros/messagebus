@@ -6,7 +6,7 @@ import pytest
 from reading_club.domain.model import Book
 from reading_club.service.repositories import (
     AbstractBookRepository,
-    AsyncEventstoreAbstractRepository,
+    AsyncMessageStoreAbstractRepository,
     BookRepositoryError,
     BookRepositoryOperationResult,
     BookRepositoryResult,
@@ -21,7 +21,7 @@ from messagebus import (
 )
 
 
-class InMemoryEventstoreRepository(AsyncEventstoreAbstractRepository):
+class InMemoryMessageStoreRepository(AsyncMessageStoreAbstractRepository):
     messages: ClassVar[MutableSequence[Message[Any]]] = []
 
     async def _add(self, message: Message[Any]) -> None:
@@ -51,7 +51,7 @@ class InMemoryBookRepository(AbstractBookRepository):
 class InMemoryUnitOfWork(AbstractUnitOfWork):
     def __init__(self, transport: AsyncAbstractEventstreamTransport):
         self.books = InMemoryBookRepository()
-        self.eventstore = InMemoryEventstoreRepository(
+        self.messagestore = InMemoryMessageStoreRepository(
             publisher=AsyncEventstreamPublisher(transport)
         )
 
@@ -66,4 +66,4 @@ def uow(transport: AsyncAbstractEventstreamTransport) -> Iterator[InMemoryUnitOf
     yield uow
     uow.books.books.clear()  # type: ignore
     uow.books.ix_books_isbn.clear()  # type: ignore
-    uow.eventstore.messages.clear()  # type: ignore
+    uow.messagestore.messages.clear()  # type: ignore

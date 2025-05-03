@@ -16,7 +16,7 @@ using the messagebus library.
    04-service-handler
    05-message-bus
    06-eventstream
-   07-local-eventstore
+   07-local-messagestore
    08-sqlalchemy-uow
    09-testing-with-database-state
    10-sending-eventstream-using-celery

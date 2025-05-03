@@ -6,13 +6,13 @@ from sqlalchemy import insert, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from messagebus import (  # AsyncEventstoreAbstractRepository,
+from messagebus import (  # AsyncMessageStoreAbstractRepository,
     AsyncAbstractEventstreamTransport,
     AsyncEventstreamPublisher,
     AsyncUnitOfWorkTransaction,
     Message,
 )
-from messagebus.service._async.repository import AsyncEventstoreAbstractRepository
+from messagebus.service._async.repository import AsyncMessageStoreAbstractRepository
 from reading_club.domain.model import Book
 from reading_club.service.repositories import (
     AbstractBookRepository,
@@ -25,7 +25,7 @@ from reading_club.service.uow import AbstractUnitOfWork
 from . import orm
 
 
-class SQLEventstoreRepository(AsyncEventstoreAbstractRepository):
+class SQLMessageStoreRepository(AsyncMessageStoreAbstractRepository):
     def __init__(self, session: AsyncSession, publisher: AsyncEventstreamPublisher):
         super().__init__(publisher)
         self.session = session
@@ -87,7 +87,7 @@ class SQLUnitOfWork(AbstractUnitOfWork):
     async def __aenter__(self) -> AsyncUnitOfWorkTransaction:
         self.messages = []
         self.session = self.session_factory()
-        self.eventstore = SQLEventstoreRepository(
+        self.messagestore = SQLMessageStoreRepository(
             self.session,
             AsyncEventstreamPublisher(self.transport),
         )

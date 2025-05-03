@@ -115,6 +115,7 @@ async def test_detach_transaction(uow: AsyncDummyUnitOfWork):
         await uow.foos.add(DummyModel(id="2", counter=1))
         await uow.foos.add(DummyModel(id="3", counter=1))
         await tuow.commit()
+
     async with uow as tuow:
         iter_foos = uow.foos.find(id="2")
         await tuow.detach()

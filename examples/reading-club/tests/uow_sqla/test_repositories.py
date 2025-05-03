@@ -124,12 +124,12 @@ async def test_book_by_id(params: Mapping[str, Any], uow_with_data: SQLUnitOfWor
     assert res == params["expected_result"]
 
 
-async def test_eventstore_add(
+async def test_messagestore_add(
     uow: SQLUnitOfWork, register_book_cmd: RegisterBook, sqla_session: AsyncSession
 ):
     register_book_cmd.id = uuidgen()
     async with uow as transaction:
-        await uow.eventstore.add(register_book_cmd)
+        await uow.messagestore.add(register_book_cmd)
         await transaction.commit()
 
     row = (

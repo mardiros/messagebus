@@ -11,20 +11,20 @@ from tests._async.conftest import (
 
 
 @async_listen
-async def handler(command: DummyCommand, uow: AsyncAbstractUnitOfWork[Any]): ...
+async def handler(command: DummyCommand, uow: AsyncAbstractUnitOfWork[Any, Any]): ...
 
 
 @async_listen
-async def handler_evt1(command: DummyEvent, uow: AsyncAbstractUnitOfWork[Any]): ...
+async def handler_evt1(command: DummyEvent, uow: AsyncAbstractUnitOfWork[Any, Any]): ...
 
 
 @async_listen
-async def handler_evt2(command: DummyEvent, uow: AsyncAbstractUnitOfWork[Any]): ...
+async def handler_evt2(command: DummyEvent, uow: AsyncAbstractUnitOfWork[Any, Any]): ...
 
 
 @async_listen
 async def handler_with_dependency_injection(
     command: AnotherDummyCommand,
-    uow: AsyncAbstractUnitOfWork[Any],
+    uow: AsyncAbstractUnitOfWork[Any, Any],
     notifier: Notifier,
 ): ...

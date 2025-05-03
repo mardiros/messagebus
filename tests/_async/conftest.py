@@ -25,7 +25,7 @@ from messagebus.service._async.eventstream import (
 from messagebus.service._async.registry import AsyncMessageBus
 from messagebus.service._async.repository import (
     AsyncAbstractRepository,
-    AsyncEventstoreAbstractRepository,
+    AsyncMessageStoreAbstractRepository,
 )
 from messagebus.service._async.unit_of_work import (
     AsyncAbstractUnitOfWork,
@@ -97,7 +97,30 @@ class AsyncFooRepository(AsyncDummyRepository): ...
 Repositories = AsyncDummyRepository | AsyncFooRepository
 
 
-class AsyncDummyUnitOfWork(AsyncAbstractUnitOfWork[Repositories]):
+class AsyncEventstreamTransport(AsyncAbstractEventstreamTransport):
+    events: MutableSequence[Mapping[str, Any]]
+
+    def __init__(self):
+        self.events = []
+
+    async def send_message_serialized(self, message: Mapping[str, Any]) -> None:
+        self.events.append(message)
+
+
+class AsyncDummyMessageStore(AsyncMessageStoreAbstractRepository):
+    messages: MutableSequence[Message[MyMetadata]]
+
+    def __init__(self, publisher: AsyncEventstreamPublisher | None):
+        super().__init__(publisher=publisher)
+        self.messages = []
+
+    async def _add(self, message: Message[MyMetadata]) -> None:
+        self.messages.append(message)
+
+
+class AsyncDummyUnitOfWork(
+    AsyncAbstractUnitOfWork[Repositories, AsyncDummyMessageStore]
+):
     def __init__(self) -> None:
         super().__init__()
         self.status = "init"
@@ -111,32 +134,13 @@ class AsyncDummyUnitOfWork(AsyncAbstractUnitOfWork[Repositories]):
         self.status = "aborted"
 
 
-class AsyncEventstreamTransport(AsyncAbstractEventstreamTransport):
-    events: MutableSequence[Mapping[str, Any]]
-
-    def __init__(self):
-        self.events = []
-
-    async def send_message_serialized(self, message: Mapping[str, Any]) -> None:
-        self.events.append(message)
-
-
-class AsyncDummyEventStore(AsyncEventstoreAbstractRepository):
-    messages: MutableSequence[Message[MyMetadata]]
-
-    def __init__(self, publisher: AsyncEventstreamPublisher | None):
-        super().__init__(publisher=publisher)
-        self.messages = []
-
-    async def _add(self, message: Message[MyMetadata]) -> None:
-        self.messages.append(message)
-
-
-class AsyncDummyUnitOfWorkWithEvents(AsyncAbstractUnitOfWork[Repositories]):
+class AsyncDummyUnitOfWorkWithEvents(
+    AsyncAbstractUnitOfWork[Repositories, AsyncDummyMessageStore]
+):
     def __init__(self, publisher: AsyncEventstreamPublisher | None) -> None:
         self.foos = AsyncFooRepository()
         self.bars = AsyncDummyRepository()
-        self.eventstore = AsyncDummyEventStore(publisher=publisher)
+        self.messagestore = AsyncDummyMessageStore(publisher=publisher)
 
     async def commit(self) -> None: ...
 
@@ -181,7 +185,7 @@ async def uow() -> AsyncIterator[AsyncDummyUnitOfWork]:
 @pytest.fixture
 async def tuow(
     uow: AsyncDummyUnitOfWork,
-) -> AsyncIterator[AsyncUnitOfWorkTransaction[Repositories]]:
+) -> AsyncIterator[AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore]]:
     async with uow as tuow:
         yield tuow
         await tuow.rollback()
@@ -200,19 +204,19 @@ async def eventstream_pub(
 
 
 @pytest.fixture
-async def eventstore(
+async def messagestore(
     eventstream_pub: AsyncEventstreamPublisher,
-) -> AsyncDummyEventStore:
-    return AsyncDummyEventStore(eventstream_pub)
+) -> AsyncDummyMessageStore:
+    return AsyncDummyMessageStore(eventstream_pub)
 
 
 @pytest.fixture
-async def uow_with_eventstore(
+async def uow_with_messagestore(
     eventstream_pub: AsyncEventstreamPublisher,
 ) -> AsyncIterator[AsyncDummyUnitOfWorkWithEvents]:
     uow = AsyncDummyUnitOfWorkWithEvents(eventstream_pub)
     yield uow
-    uow.eventstore.messages.clear()  # type: ignore
+    uow.messagestore.messages.clear()  # type: ignore
     uow.foos.models.clear()
     uow.foos.seen.clear()
     uow.bars.models.clear()

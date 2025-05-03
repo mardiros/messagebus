@@ -14,8 +14,12 @@ if TYPE_CHECKING:
     from messagebus.service._async.dependency import AsyncDependency  # coverage: ignore
 from messagebus.service._async.repository import (
     AsyncAbstractRepository,
-    AsyncEventstoreAbstractRepository,
-    AsyncSinkholeEventstoreRepository,
+    AsyncMessageStoreAbstractRepository,
+    AsyncSinkholeMessageStoreRepository,
+)
+
+TAsyncMessageStore = TypeVar(
+    "TAsyncMessageStore", bound=AsyncMessageStoreAbstractRepository
 )
 
 
@@ -47,7 +51,7 @@ class TransactionStatus(enum.Enum):
 TRepositories = TypeVar("TRepositories", bound=AsyncAbstractRepository[Any])
 
 
-class AsyncUnitOfWorkTransaction(Generic[TRepositories]):
+class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncMessageStore]):
     """
     Context manager for business transactions of the unit of work.
 
@@ -57,12 +61,14 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories]):
     of detached for streaming purpose.
     """
 
-    uow: AsyncAbstractUnitOfWork[TRepositories]
+    uow: AsyncAbstractUnitOfWork[TRepositories, TAsyncMessageStore]
     """Associated unit of work instance manipulated in the transaction."""
     status: TransactionStatus
     """Current status of the transaction"""
 
-    def __init__(self, uow: AsyncAbstractUnitOfWork[TRepositories]) -> None:
+    def __init__(
+        self, uow: AsyncAbstractUnitOfWork[TRepositories, TAsyncMessageStore]
+    ) -> None:
         self.status = TransactionStatus.running
         self.uow = uow
         self._hooks: list[Any] = []
@@ -71,8 +77,8 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories]):
         return getattr(self.uow, name)
 
     @property
-    def eventstore(self) -> AsyncEventstoreAbstractRepository:
-        return self.uow.eventstore
+    def messagestore(self) -> AsyncMessageStoreAbstractRepository:
+        return self.uow.messagestore
 
     def add_listener(self, listener: AsyncDependency) -> AsyncDependency:
         self._hooks.append(listener)
@@ -110,7 +116,9 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories]):
         """
         self.status = TransactionStatus.streaming
 
-    async def __aenter__(self) -> AsyncUnitOfWorkTransaction[TRepositories]:
+    async def __aenter__(
+        self,
+    ) -> AsyncUnitOfWorkTransaction[TRepositories, TAsyncMessageStore]:
         """Entering the transaction."""
         if self.status != TransactionStatus.running:
             raise TransactionError("Invalid transaction status.")
@@ -138,7 +146,7 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories]):
                 "Transaction must be explicitly close. Missing commit/rollback call."
             )
         if self.status == TransactionStatus.committed:
-            await self.uow.eventstore.publish_eventstream()
+            await self.uow.messagestore.publish_eventstream()
         self.status = TransactionStatus.closed
 
     async def close(self) -> None:
@@ -154,7 +162,7 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories]):
         await self._close()
 
 
-class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories]):
+class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TAsyncMessageStore]):
     """
     Abstract unit of work.
 
@@ -163,7 +171,7 @@ class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories]):
     has to be declared has attributes.
     """
 
-    eventstore: AsyncEventstoreAbstractRepository = AsyncSinkholeEventstoreRepository()
+    messagestore: TAsyncMessageStore = AsyncSinkholeMessageStoreRepository()  # type: ignore
 
     def collect_new_events(self) -> Iterator[Message[Any]]:
         for repo in self._iter_repositories():
@@ -180,7 +188,9 @@ class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories]):
             if isinstance(member, AsyncAbstractRepository):
                 yield member
 
-    async def __aenter__(self) -> AsyncUnitOfWorkTransaction[TRepositories]:
+    async def __aenter__(
+        self,
+    ) -> AsyncUnitOfWorkTransaction[TRepositories, TAsyncMessageStore]:
         self.__transaction = AsyncUnitOfWorkTransaction(self)
         await self.__transaction.__aenter__()
         return self.__transaction
@@ -203,4 +213,4 @@ class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories]):
         """Rollback the transation."""
 
 
-TAsyncUow = TypeVar("TAsyncUow", bound=AsyncAbstractUnitOfWork[Any])
+TAsyncUow = TypeVar("TAsyncUow", bound=AsyncAbstractUnitOfWork[Any, Any])

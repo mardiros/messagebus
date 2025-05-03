@@ -14,6 +14,7 @@ from tests._sync.conftest import (
     DummyModel,
     Notifier,
     Repositories,
+    SyncDummyMessageStore,
     SyncDummyUnitOfWorkWithEvents,
     SyncEventstreamTransport,
 )
@@ -21,7 +22,7 @@ from tests._sync.conftest import (
 
 def listen_command(
     cmd: DummyCommand,
-    uow: SyncUnitOfWorkTransaction[Repositories],
+    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore],
     notifier: Notifier,
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
@@ -35,12 +36,12 @@ def listen_command(
 def test_store_events_and_publish(
     bus: SyncMessageBus[Repositories],
     eventstream_transport: SyncEventstreamTransport,
-    uow_with_eventstore: SyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
     notifier: Notifier,
 ):
     bus.add_listener(DummyCommand, listen_command)
-    with uow_with_eventstore as tuow:
+    with uow_with_messagestore as tuow:
         bus.handle(dummy_command, tuow)
         tuow.commit()
     assert notifier.inbox == [
@@ -62,7 +63,7 @@ class TransientDependency(SyncDependency):
 
 def listen_with_transient(
     command: DummyCommand,
-    uow: SyncAbstractUnitOfWork[Any],
+    uow: SyncAbstractUnitOfWork[Any, Any],
     tracker: TransientDependency,
 ):
     tracker.tracks.append("tracked")
@@ -71,13 +72,13 @@ def listen_with_transient(
 def test_transient_dependency(
     bus: SyncMessageBus[Repositories],
     eventstream_transport: SyncEventstreamTransport,
-    uow_with_eventstore: SyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
     notifier: Notifier,
 ):
     tmp = TransientDependency()
     bus.add_listener(DummyCommand, listen_with_transient)
-    with uow_with_eventstore as tuow:
+    with uow_with_messagestore as tuow:
         bus.handle(dummy_command, tuow, tracker=tmp)
         tuow.commit()
     assert tmp.tracks == ["tracked"]
@@ -87,13 +88,13 @@ def test_transient_dependency(
 def test_transient_dependency_missing(
     bus: SyncMessageBus[Repositories],
     eventstream_transport: SyncEventstreamTransport,
-    uow_with_eventstore: SyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
     notifier: Notifier,
 ):
     bus.add_listener(DummyCommand, listen_with_transient)
     with pytest.raises(MissingDependencyError) as ctx:
-        with uow_with_eventstore as tuow:
+        with uow_with_messagestore as tuow:
             bus.handle(dummy_command, tuow)
             tuow.commit()
     assert str(ctx.value) == "Missing messagebus dependency 'tracker'"
@@ -101,7 +102,7 @@ def test_transient_dependency_missing(
 
 def listen_with_optional(
     command: DummyCommand,
-    uow: SyncAbstractUnitOfWork[Any],
+    uow: SyncAbstractUnitOfWork[Any, Any],
     tracker: TransientDependency | None = None,
 ):
     if tracker:
@@ -111,13 +112,13 @@ def listen_with_optional(
 def test_optional_dependency(
     bus: SyncMessageBus[Repositories],
     eventstream_transport: SyncEventstreamTransport,
-    uow_with_eventstore: SyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
     notifier: Notifier,
 ):
     tmp = TransientDependency()
     bus.add_listener(DummyCommand, listen_with_optional)
-    with uow_with_eventstore as tuow:
+    with uow_with_messagestore as tuow:
         bus.handle(dummy_command, tuow, tracker=tmp)
         tuow.commit()
     assert tmp.tracks == ["optionnaly_tracked"]
@@ -127,12 +128,12 @@ def test_optional_dependency(
 def test_optional_dependency_missing(
     bus: SyncMessageBus[Repositories],
     eventstream_transport: SyncEventstreamTransport,
-    uow_with_eventstore: SyncDummyUnitOfWorkWithEvents,
+    uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
     notifier: Notifier,
 ):
     bus.add_listener(DummyCommand, listen_with_optional)
-    with uow_with_eventstore as tuow:
+    with uow_with_messagestore as tuow:
         bus.handle(dummy_command, tuow)
         tuow.commit()
     # we tests that there is no issue here

@@ -14,8 +14,12 @@ if TYPE_CHECKING:
     from messagebus.service._sync.dependency import SyncDependency  # coverage: ignore
 from messagebus.service._sync.repository import (
     SyncAbstractRepository,
-    SyncEventstoreAbstractRepository,
-    SyncSinkholeEventstoreRepository,
+    SyncMessageStoreAbstractRepository,
+    SyncSinkholeMessageStoreRepository,
+)
+
+TSyncMessageStore = TypeVar(
+    "TSyncMessageStore", bound=SyncMessageStoreAbstractRepository
 )
 
 
@@ -47,7 +51,7 @@ class TransactionStatus(enum.Enum):
 TRepositories = TypeVar("TRepositories", bound=SyncAbstractRepository[Any])
 
 
-class SyncUnitOfWorkTransaction(Generic[TRepositories]):
+class SyncUnitOfWorkTransaction(Generic[TRepositories, TSyncMessageStore]):
     """
     Context manager for business transactions of the unit of work.
 
@@ -57,12 +61,14 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories]):
     of detached for streaming purpose.
     """
 
-    uow: SyncAbstractUnitOfWork[TRepositories]
+    uow: SyncAbstractUnitOfWork[TRepositories, TSyncMessageStore]
     """Associated unit of work instance manipulated in the transaction."""
     status: TransactionStatus
     """Current status of the transaction"""
 
-    def __init__(self, uow: SyncAbstractUnitOfWork[TRepositories]) -> None:
+    def __init__(
+        self, uow: SyncAbstractUnitOfWork[TRepositories, TSyncMessageStore]
+    ) -> None:
         self.status = TransactionStatus.running
         self.uow = uow
         self._hooks: list[Any] = []
@@ -71,8 +77,8 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories]):
         return getattr(self.uow, name)
 
     @property
-    def eventstore(self) -> SyncEventstoreAbstractRepository:
-        return self.uow.eventstore
+    def messagestore(self) -> SyncMessageStoreAbstractRepository:
+        return self.uow.messagestore
 
     def add_listener(self, listener: SyncDependency) -> SyncDependency:
         self._hooks.append(listener)
@@ -110,7 +116,9 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories]):
         """
         self.status = TransactionStatus.streaming
 
-    def __enter__(self) -> SyncUnitOfWorkTransaction[TRepositories]:
+    def __enter__(
+        self,
+    ) -> SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore]:
         """Entering the transaction."""
         if self.status != TransactionStatus.running:
             raise TransactionError("Invalid transaction status.")
@@ -138,7 +146,7 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories]):
                 "Transaction must be explicitly close. Missing commit/rollback call."
             )
         if self.status == TransactionStatus.committed:
-            self.uow.eventstore.publish_eventstream()
+            self.uow.messagestore.publish_eventstream()
         self.status = TransactionStatus.closed
 
     def close(self) -> None:
@@ -154,7 +162,7 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories]):
         self._close()
 
 
-class SyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories]):
+class SyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TSyncMessageStore]):
     """
     Abstract unit of work.
 
@@ -163,7 +171,7 @@ class SyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories]):
     has to be declared has attributes.
     """
 
-    eventstore: SyncEventstoreAbstractRepository = SyncSinkholeEventstoreRepository()
+    messagestore: TSyncMessageStore = SyncSinkholeMessageStoreRepository()  # type: ignore
 
     def collect_new_events(self) -> Iterator[Message[Any]]:
         for repo in self._iter_repositories():
@@ -180,7 +188,9 @@ class SyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories]):
             if isinstance(member, SyncAbstractRepository):
                 yield member
 
-    def __enter__(self) -> SyncUnitOfWorkTransaction[TRepositories]:
+    def __enter__(
+        self,
+    ) -> SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore]:
         self.__transaction = SyncUnitOfWorkTransaction(self)
         self.__transaction.__enter__()
         return self.__transaction
@@ -203,4 +213,4 @@ class SyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories]):
         """Rollback the transation."""
 
 
-TSyncUow = TypeVar("TSyncUow", bound=SyncAbstractUnitOfWork[Any])
+TSyncUow = TypeVar("TSyncUow", bound=SyncAbstractUnitOfWork[Any, Any])

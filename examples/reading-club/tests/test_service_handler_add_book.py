@@ -103,7 +103,7 @@ async def test_bus_handler(
         assert book.unwrap().messages == []
         await transaction.commit()
 
-    assert uow.eventstore.messages == [  # type: ignore
+    assert uow.messagestore.messages == [  # type: ignore
         RegisterBook(
             id=uuidgen(1),
             isbn="0-321-12521-5",

@@ -6,12 +6,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-async def test_eventstore_add(
+async def test_messagestore_add(
     uow: SQLUnitOfWork, register_book_cmd: RegisterBook, sqla_session: AsyncSession
 ):
     register_book_cmd.id = uuidgen()
     async with uow as transaction:
-        await uow.eventstore.add(register_book_cmd)
+        await uow.messagestore.add(register_book_cmd)
         await transaction.commit()
 
     row = (

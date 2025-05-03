@@ -1,3 +1,10 @@
+0.13.0  - Released on 2025-05-03
+--------------------------------
+* Breaking Change: eventstore property has been rename messagestore in the unit of work.
+* Typing Update: now the unit of work have a new generic parameter to specify the class
+  of the messagestore. Now more methods can be safely added to the messagestore.
+* TransactionStatus type is exposed in the API.
+
 0.12.0  - Released on 2025-04-13
 --------------------------------
 * Add a new state for the transaction for streaming context.

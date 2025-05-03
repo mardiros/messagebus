@@ -32,6 +32,7 @@ from .service._async.unit_of_work import (
     AsyncAbstractUnitOfWork,
     AsyncMessageStoreAbstractRepository,
     AsyncUnitOfWorkTransaction,
+    TAsyncMessageStore,
 )
 from .service._sync.dependency import SyncDependency
 from .service._sync.eventstream import (
@@ -48,6 +49,7 @@ from .service._sync.unit_of_work import (
     SyncAbstractUnitOfWork,
     SyncMessageStoreAbstractRepository,
     SyncUnitOfWorkTransaction,
+    TSyncMessageStore,
 )
 from .service.eventstream import AbstractMessageSerializer
 
@@ -61,6 +63,7 @@ __all__ = [
     "AsyncAbstractRepository",
     # Unit of work
     "AsyncAbstractUnitOfWork",
+    "TAsyncMessageStore",
     "AsyncMessageStoreAbstractRepository",
     "AsyncEventstreamPublisher",
     "AsyncMessageBus",
@@ -81,6 +84,7 @@ __all__ = [
     "SyncAbstractEventstreamTransport",
     "SyncAbstractRepository",
     "SyncAbstractUnitOfWork",
+    "TSyncMessageStore",
     "SyncMessageStoreAbstractRepository",
     "SyncEventstreamPublisher",
     "SyncMessageBus",

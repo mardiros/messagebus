@@ -84,6 +84,10 @@ disallow_any_generics = true
 disallow_untyped_defs = true
 module = "messagebus.*"
 
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+module = ["venusian"]
+
 [tool.isort]
 profile = "black"
 

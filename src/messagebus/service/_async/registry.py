@@ -10,7 +10,7 @@ from collections import defaultdict
 from collections.abc import Mapping
 from typing import Any, Generic, cast
 
-import venusian  # type: ignore
+import venusian
 
 from messagebus.domain.model import GenericCommand, GenericEvent, Message
 from messagebus.domain.model.message import TMessage

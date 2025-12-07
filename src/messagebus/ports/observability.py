@@ -37,7 +37,7 @@ class SinkholeMetricsStore(AbstractMetricsStore):
 
     @contextmanager
     def command_processing_timer(self, command: GenericCommand[Any]) -> Iterator[None]:
-        yield
+        yield  # coverage: ignore
 
 
 TMetricsStore = TypeVar("TMetricsStore", bound=AbstractMetricsStore)

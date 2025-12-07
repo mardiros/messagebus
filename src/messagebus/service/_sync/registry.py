@@ -14,19 +14,13 @@ import venusian
 
 from messagebus.domain.model import GenericCommand, GenericEvent, Message
 from messagebus.domain.model.message import TMessage
-from messagebus.infrastructure.observability.metrics import TMetricsStore
 from messagebus.service._sync.dependency import (
     P,
     SyncDependency,
     SyncMessageHandler,
     SyncMessageHook,
 )
-from messagebus.service._sync.unit_of_work import (
-    SyncUnitOfWorkTransaction,
-    TRepositories,
-    TSyncMessageStore,
-    TSyncUow,
-)
+from messagebus.service._sync.unit_of_work import SyncUnitOfWorkTransaction, TSyncUow
 
 log = logging.getLogger(__name__)
 VENUSIAN_CATEGORY = "messagebus"
@@ -61,7 +55,7 @@ def sync_listen(
     return wrapped
 
 
-class SyncMessageBus(Generic[TRepositories]):
+class SyncMessageBus(Generic[TSyncUow]):
     """Store all the handlers for commands an events."""
 
     def __init__(self, **dependencies: Any) -> None:
@@ -130,7 +124,7 @@ class SyncMessageBus(Generic[TRepositories]):
     def _handle(
         self,
         command: GenericCommand[Any],
-        uow: SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore, TMetricsStore],
+        uow: SyncUnitOfWorkTransaction[TSyncUow],
         **transient_dependencies: Any,
     ) -> Any:
         dependencies = {k: uow.add_listener(v()) for k, v in self.dependencies.items()}
@@ -166,7 +160,7 @@ class SyncMessageBus(Generic[TRepositories]):
     def handle(
         self,
         command: GenericCommand[Any],
-        uow: SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore, TMetricsStore],
+        uow: SyncUnitOfWorkTransaction[TSyncUow],
         **transient_dependencies: Any,
     ) -> Any:
         """

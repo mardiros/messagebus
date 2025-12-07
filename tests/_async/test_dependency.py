@@ -9,22 +9,18 @@ from messagebus.service._async.unit_of_work import (
     AsyncUnitOfWorkTransaction,
 )
 from tests._async.conftest import (
-    AsyncDummyMessageStore,
+    AsyncDummyUnitOfWork,
     AsyncDummyUnitOfWorkWithEvents,
     AsyncEventstreamTransport,
-    DummyMetricsStore,
     DummyModel,
     Notifier,
-    Repositories,
 )
 from tests.conftest import DummyCommand, DummyEvent
 
 
 async def listen_command(
     cmd: DummyCommand,
-    uow: AsyncUnitOfWorkTransaction[
-        Repositories, AsyncDummyMessageStore, DummyMetricsStore
-    ],
+    uow: AsyncUnitOfWorkTransaction[AsyncDummyUnitOfWork],
     notifier: Notifier,
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
@@ -36,7 +32,7 @@ async def listen_command(
 
 
 async def test_store_events_and_publish(
-    bus: AsyncMessageBus[Repositories],
+    bus: AsyncMessageBus[AsyncDummyUnitOfWorkWithEvents],
     eventstream_transport: AsyncEventstreamTransport,
     uow_with_messagestore: AsyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
@@ -72,7 +68,7 @@ async def listen_with_transient(
 
 
 async def test_transient_dependency(
-    bus: AsyncMessageBus[Repositories],
+    bus: AsyncMessageBus[AsyncDummyUnitOfWorkWithEvents],
     eventstream_transport: AsyncEventstreamTransport,
     uow_with_messagestore: AsyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
@@ -88,7 +84,7 @@ async def test_transient_dependency(
 
 
 async def test_transient_dependency_missing(
-    bus: AsyncMessageBus[Repositories],
+    bus: AsyncMessageBus[AsyncDummyUnitOfWorkWithEvents],
     eventstream_transport: AsyncEventstreamTransport,
     uow_with_messagestore: AsyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
@@ -112,7 +108,7 @@ async def listen_with_optional(
 
 
 async def test_optional_dependency(
-    bus: AsyncMessageBus[Repositories],
+    bus: AsyncMessageBus[AsyncDummyUnitOfWorkWithEvents],
     eventstream_transport: AsyncEventstreamTransport,
     uow_with_messagestore: AsyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
@@ -128,7 +124,7 @@ async def test_optional_dependency(
 
 
 async def test_optional_dependency_missing(
-    bus: AsyncMessageBus[Repositories],
+    bus: AsyncMessageBus[AsyncDummyUnitOfWorkWithEvents],
     eventstream_transport: AsyncEventstreamTransport,
     uow_with_messagestore: AsyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,

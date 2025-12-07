@@ -2,14 +2,12 @@ from typing import Any
 
 import pytest
 
-from messagebus.infrastructure.observability.metrics import MetricsStore
 from messagebus.service._sync.registry import ConfigurationError, SyncMessageBus
 from tests._sync.conftest import (
     DummyMetricsStore,
     DummyModel,
     Notifier,
-    Repositories,
-    SyncDummyMessageStore,
+    SyncDummyUnitOfWork,
     SyncUnitOfWorkTransaction,
 )
 from tests._sync.handlers import dummy
@@ -20,7 +18,7 @@ conftest_mod = __name__.replace("test_registry", "conftest")
 
 def listen_command(
     cmd: DummyCommand,
-    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore, MetricsStore],
+    uow: SyncUnitOfWorkTransaction[SyncDummyUnitOfWork],
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)
@@ -31,7 +29,7 @@ def listen_command(
 
 def listen_event(
     cmd: DummyEvent,
-    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore, MetricsStore],
+    uow: SyncUnitOfWorkTransaction[SyncDummyUnitOfWork],
 ) -> None:
     """This event is indented to be fire by the message bus."""
     rfoo = uow.foos.get(cmd.id)
@@ -40,8 +38,8 @@ def listen_event(
 
 
 def test_messagebus(
-    bus: SyncMessageBus[Repositories],
-    tuow: SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore, MetricsStore],
+    bus: SyncMessageBus[SyncDummyUnitOfWork],
+    tuow: SyncUnitOfWorkTransaction[SyncDummyUnitOfWork],
     metrics: DummyMetricsStore,
 ):
     """
@@ -91,8 +89,8 @@ def test_messagebus(
 
 
 def test_messagebus_handle_only_message(
-    bus: SyncMessageBus[Repositories],
-    tuow: SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore, MetricsStore],
+    bus: SyncMessageBus[SyncDummyUnitOfWork],
+    tuow: SyncUnitOfWorkTransaction[SyncDummyUnitOfWork],
 ):
     class Msg:
         def __repr__(self):
@@ -104,7 +102,7 @@ def test_messagebus_handle_only_message(
 
 
 def test_messagebus_cannot_register_handler_twice(
-    bus: SyncMessageBus[Repositories],
+    bus: SyncMessageBus[SyncDummyUnitOfWork],
 ):
     bus.add_listener(DummyCommand, listen_command)
     with pytest.raises(ConfigurationError) as ctx:
@@ -118,7 +116,7 @@ def test_messagebus_cannot_register_handler_twice(
 
 
 def test_messagebus_cannot_register_handler_on_non_message(
-    bus: SyncMessageBus[Repositories],
+    bus: SyncMessageBus[SyncDummyUnitOfWork],
 ):
     with pytest.raises(ConfigurationError) as ctx:
         bus.add_listener(
@@ -133,7 +131,7 @@ def test_messagebus_cannot_register_handler_on_non_message(
 
 
 def test_messagebus_cannot_unregister_non_unregistered_handler(
-    bus: SyncMessageBus[Repositories],
+    bus: SyncMessageBus[SyncDummyUnitOfWork],
 ):
     with pytest.raises(ConfigurationError) as ctx:
         bus.remove_listener(DummyCommand, listen_command)
@@ -186,7 +184,7 @@ def test_scan_relative(bus: SyncMessageBus[Any]):
 
 def listen_command_with_dependency(
     cmd: DummyCommand,
-    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore, MetricsStore],
+    uow: SyncUnitOfWorkTransaction[SyncDummyUnitOfWork],
     dummy_dep: Notifier,
     dummy_dep2: Notifier | None = None,
 ) -> DummyModel:
@@ -197,10 +195,10 @@ def listen_command_with_dependency(
 
 
 def test_messagebus_dependency(
-    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore, MetricsStore],
+    uow: SyncUnitOfWorkTransaction[SyncDummyUnitOfWork],
 ):
     d: dict[str, str] = {}
-    bus = SyncMessageBus[Repositories](dummy_dep=d)
+    bus = SyncMessageBus[SyncDummyUnitOfWork](dummy_dep=d)
     bus.add_listener(DummyCommand, listen_command_with_dependency)
     assert (
         bus.commands_registry[DummyCommand].callback == listen_command_with_dependency

@@ -2,15 +2,13 @@ from typing import Any
 
 import pytest
 
-from messagebus.infrastructure.observability.metrics import MetricsStore
 from messagebus.service._async.registry import AsyncMessageBus, ConfigurationError
 from tests._async.conftest import (
-    AsyncDummyMessageStore,
+    AsyncDummyUnitOfWork,
     AsyncUnitOfWorkTransaction,
     DummyMetricsStore,
     DummyModel,
     Notifier,
-    Repositories,
 )
 from tests._async.handlers import dummy
 from tests.conftest import DummyCommand, DummyEvent
@@ -20,7 +18,7 @@ conftest_mod = __name__.replace("test_registry", "conftest")
 
 async def listen_command(
     cmd: DummyCommand,
-    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore, MetricsStore],
+    uow: AsyncUnitOfWorkTransaction[AsyncDummyUnitOfWork],
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)
@@ -31,7 +29,7 @@ async def listen_command(
 
 async def listen_event(
     cmd: DummyEvent,
-    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore, MetricsStore],
+    uow: AsyncUnitOfWorkTransaction[AsyncDummyUnitOfWork],
 ) -> None:
     """This event is indented to be fire by the message bus."""
     rfoo = await uow.foos.get(cmd.id)
@@ -40,10 +38,8 @@ async def listen_event(
 
 
 async def test_messagebus(
-    bus: AsyncMessageBus[Repositories],
-    tuow: AsyncUnitOfWorkTransaction[
-        Repositories, AsyncDummyMessageStore, MetricsStore
-    ],
+    bus: AsyncMessageBus[AsyncDummyUnitOfWork],
+    tuow: AsyncUnitOfWorkTransaction[AsyncDummyUnitOfWork],
     metrics: DummyMetricsStore,
 ):
     """
@@ -93,10 +89,8 @@ async def test_messagebus(
 
 
 async def test_messagebus_handle_only_message(
-    bus: AsyncMessageBus[Repositories],
-    tuow: AsyncUnitOfWorkTransaction[
-        Repositories, AsyncDummyMessageStore, MetricsStore
-    ],
+    bus: AsyncMessageBus[AsyncDummyUnitOfWork],
+    tuow: AsyncUnitOfWorkTransaction[AsyncDummyUnitOfWork],
 ):
     class Msg:
         def __repr__(self):
@@ -108,7 +102,7 @@ async def test_messagebus_handle_only_message(
 
 
 def test_messagebus_cannot_register_handler_twice(
-    bus: AsyncMessageBus[Repositories],
+    bus: AsyncMessageBus[AsyncDummyUnitOfWork],
 ):
     bus.add_listener(DummyCommand, listen_command)
     with pytest.raises(ConfigurationError) as ctx:
@@ -122,7 +116,7 @@ def test_messagebus_cannot_register_handler_twice(
 
 
 def test_messagebus_cannot_register_handler_on_non_message(
-    bus: AsyncMessageBus[Repositories],
+    bus: AsyncMessageBus[AsyncDummyUnitOfWork],
 ):
     with pytest.raises(ConfigurationError) as ctx:
         bus.add_listener(
@@ -137,7 +131,7 @@ def test_messagebus_cannot_register_handler_on_non_message(
 
 
 def test_messagebus_cannot_unregister_non_unregistered_handler(
-    bus: AsyncMessageBus[Repositories],
+    bus: AsyncMessageBus[AsyncDummyUnitOfWork],
 ):
     with pytest.raises(ConfigurationError) as ctx:
         bus.remove_listener(DummyCommand, listen_command)
@@ -190,7 +184,7 @@ def test_scan_relative(bus: AsyncMessageBus[Any]):
 
 async def listen_command_with_dependency(
     cmd: DummyCommand,
-    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore, MetricsStore],
+    uow: AsyncUnitOfWorkTransaction[AsyncDummyUnitOfWork],
     dummy_dep: Notifier,
     dummy_dep2: Notifier | None = None,
 ) -> DummyModel:
@@ -201,10 +195,10 @@ async def listen_command_with_dependency(
 
 
 async def test_messagebus_dependency(
-    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore, MetricsStore],
+    uow: AsyncUnitOfWorkTransaction[AsyncDummyUnitOfWork],
 ):
     d: dict[str, str] = {}
-    bus = AsyncMessageBus[Repositories](dummy_dep=d)
+    bus = AsyncMessageBus[AsyncDummyUnitOfWork](dummy_dep=d)
     bus.add_listener(DummyCommand, listen_command_with_dependency)
     assert (
         bus.commands_registry[DummyCommand].callback == listen_command_with_dependency

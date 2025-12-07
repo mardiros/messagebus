@@ -7,6 +7,8 @@ from collections.abc import Iterator
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
+from typing_extensions import Self
+
 from messagebus.domain.model import Message
 from messagebus.infrastructure.observability.metrics import (
     AbstractMetricsStore,
@@ -28,12 +30,68 @@ TSyncMessageStore = TypeVar(
 )
 
 
-TRepositories = TypeVar("TRepositories", bound=SyncAbstractRepository[Any])
+TRepositories = TypeVar(
+    "TRepositories", bound=SyncAbstractRepository[Any], covariant=True
+)
 
 
-class SyncUnitOfWorkTransaction(
-    Generic[TRepositories, TSyncMessageStore, TMetricsStore]
+class SyncAbstractUnitOfWork(
+    abc.ABC, Generic[TRepositories, TSyncMessageStore, TMetricsStore]
 ):
+    """
+    Abstract unit of work.
+
+    To implement a unit of work, the :meth:`AsyncAbstractUnitOfWork.commit` and
+    :meth:`AsyncAbstractUnitOfWork.rollback` has to be defined, and some repositories
+    has to be declared has attributes.
+    """
+
+    metrics_store: TMetricsStore = MetricsStore()  # type: ignore
+    messagestore: TSyncMessageStore = SyncSinkholeMessageStoreRepository()  # type: ignore
+    __transaction: SyncUnitOfWorkTransaction[Self]
+
+    def collect_new_events(self) -> Iterator[Message[Any]]:
+        for repo in self._iter_repositories():
+            while repo.seen:
+                model = repo.seen.pop(0)
+                while model.messages:
+                    yield model.messages.pop(0)
+
+    def _iter_repositories(
+        self,
+    ) -> Iterator[SyncAbstractRepository[Any]]:
+        for member_name in self.__dict__.keys():
+            member = getattr(self, member_name)
+            if isinstance(member, SyncAbstractRepository):
+                yield member
+
+    def __enter__(self) -> SyncUnitOfWorkTransaction[Self]:
+        self.__transaction = SyncUnitOfWorkTransaction(self)
+        self.__transaction.__enter__()
+        return self.__transaction
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        # AsyncUnitOfWorkTransaction is making the thing
+        self.__transaction.__exit__(exc_type, exc, tb)
+
+    @abc.abstractmethod
+    def commit(self) -> None:
+        """Commit the transation."""
+
+    @abc.abstractmethod
+    def rollback(self) -> None:
+        """Rollback the transation."""
+
+
+TSyncUow = TypeVar("TSyncUow", bound=SyncAbstractUnitOfWork[Any, Any, Any])
+
+
+class SyncUnitOfWorkTransaction(Generic[TSyncUow]):
     """
     Context manager for business transactions of the unit of work.
 
@@ -43,21 +101,21 @@ class SyncUnitOfWorkTransaction(
     of detached for streaming purpose.
     """
 
-    uow: SyncAbstractUnitOfWork[TRepositories, TSyncMessageStore, TMetricsStore]
+    uow: TSyncUow
     """Associated unit of work instance manipulated in the transaction."""
     status: TransactionStatus
     """Current status of the transaction"""
 
     def __init__(
         self,
-        uow: SyncAbstractUnitOfWork[TRepositories, TSyncMessageStore, TMetricsStore],
+        uow: TSyncUow,
     ) -> None:
         self.status = TransactionStatus.running
         self.uow = uow
         self._hooks: list[Any] = []
 
-    def __getattr__(self, name: str) -> TRepositories:
-        return getattr(self.uow, name)
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.uow, name)  # type: ignore
 
     @property
     def messagestore(self) -> SyncAbstractMessageStoreRepository:
@@ -103,9 +161,7 @@ class SyncUnitOfWorkTransaction(
         """
         self.status = TransactionStatus.streaming
 
-    def __enter__(
-        self,
-    ) -> SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore, TMetricsStore]:
+    def __enter__(self) -> Self:
         """Entering the transaction."""
         if self.status != TransactionStatus.running:
             raise TransactionError("Invalid transaction status.")
@@ -152,60 +208,3 @@ class SyncUnitOfWorkTransaction(
         if self.status == TransactionStatus.streaming:
             self.rollback()
         self._close()
-
-
-class SyncAbstractUnitOfWork(
-    abc.ABC, Generic[TRepositories, TSyncMessageStore, TMetricsStore]
-):
-    """
-    Abstract unit of work.
-
-    To implement a unit of work, the :meth:`AsyncAbstractUnitOfWork.commit` and
-    :meth:`AsyncAbstractUnitOfWork.rollback` has to be defined, and some repositories
-    has to be declared has attributes.
-    """
-
-    metrics_store: TMetricsStore = MetricsStore()  # type: ignore
-    messagestore: TSyncMessageStore = SyncSinkholeMessageStoreRepository()  # type: ignore
-
-    def collect_new_events(self) -> Iterator[Message[Any]]:
-        for repo in self._iter_repositories():
-            while repo.seen:
-                model = repo.seen.pop(0)
-                while model.messages:
-                    yield model.messages.pop(0)
-
-    def _iter_repositories(
-        self,
-    ) -> Iterator[SyncAbstractRepository[Any]]:
-        for member_name in self.__dict__.keys():
-            member = getattr(self, member_name)
-            if isinstance(member, SyncAbstractRepository):
-                yield member
-
-    def __enter__(
-        self,
-    ) -> SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore, TMetricsStore]:
-        self.__transaction = SyncUnitOfWorkTransaction(self)
-        self.__transaction.__enter__()
-        return self.__transaction
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc: BaseException | None,
-        tb: TracebackType | None,
-    ) -> None:
-        # AsyncUnitOfWorkTransaction is making the thing
-        self.__transaction.__exit__(exc_type, exc, tb)
-
-    @abc.abstractmethod
-    def commit(self) -> None:
-        """Commit the transation."""
-
-    @abc.abstractmethod
-    def rollback(self) -> None:
-        """Rollback the transation."""
-
-
-TSyncUow = TypeVar("TSyncUow", bound=SyncAbstractUnitOfWork[Any, Any, Any])

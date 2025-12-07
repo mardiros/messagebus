@@ -1,11 +1,9 @@
 from messagebus.service._sync.registry import SyncMessageBus
 from messagebus.service._sync.unit_of_work import SyncUnitOfWorkTransaction
 from tests._sync.conftest import (
-    DummyMetricsStore,
     DummyModel,
     MyMetadata,
-    Repositories,
-    SyncDummyMessageStore,
+    SyncDummyUnitOfWork,
     SyncDummyUnitOfWorkWithEvents,
     SyncEventstreamTransport,
 )
@@ -14,9 +12,7 @@ from tests.conftest import DummyCommand, DummyEvent
 
 def listen_command(
     cmd: DummyCommand,
-    uow: SyncUnitOfWorkTransaction[
-        Repositories, SyncDummyMessageStore, DummyMetricsStore
-    ],
+    uow: SyncUnitOfWorkTransaction[SyncDummyUnitOfWork],
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)
@@ -26,7 +22,7 @@ def listen_command(
 
 
 def test_store_events_and_publish(
-    bus: SyncMessageBus[Repositories],
+    bus: SyncMessageBus[SyncDummyUnitOfWorkWithEvents],
     eventstream_transport: SyncEventstreamTransport,
     uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
@@ -63,7 +59,7 @@ def test_store_events_and_publish(
 
 
 def test_store_events_and_rollback(
-    bus: SyncMessageBus[Repositories],
+    bus: SyncMessageBus[SyncDummyUnitOfWorkWithEvents],
     eventstream_transport: SyncEventstreamTransport,
     uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,

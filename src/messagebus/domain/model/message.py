@@ -5,7 +5,7 @@ Message base classes.
 
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Generic, TypeVar
 from uuid import UUID
 
@@ -20,7 +20,7 @@ class Message(BaseModel, Generic[TMetadata]):
 
     message_id: UUID = Field(default_factory=uuid7)
     """Unique identifier of the message."""
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     """
     Timestamp of the message.
 

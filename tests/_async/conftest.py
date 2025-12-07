@@ -1,5 +1,13 @@
 import enum
-from collections.abc import AsyncIterator, Mapping, MutableMapping, MutableSequence
+import time
+from collections.abc import (
+    AsyncIterator,
+    Iterator,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+)
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from types import EllipsisType
 from typing import (
@@ -13,7 +21,6 @@ from result import Err, Ok, Result
 
 from messagebus.domain.model import (
     GenericCommand,
-    GenericEvent,
     GenericModel,
     Message,
     Metadata,
@@ -34,6 +41,7 @@ from messagebus.service._async.unit_of_work import (
     AsyncAbstractUnitOfWork,
     AsyncUnitOfWorkTransaction,
 )
+from tests.conftest import MyMetadata
 
 
 @dataclass
@@ -43,6 +51,7 @@ class DummyMetricsStore(AbstractMetricsStore):
     transaction_commit_count: int = 0
     transaction_rollback_count: int = 0
     processed_count: dict[tuple[str, int], int] = field(default_factory=dict)
+    processing_time: float = 0
 
     def inc_beginned_transaction_count(self):
         self.beginned_transaction_count += 1
@@ -68,9 +77,11 @@ class DummyMetricsStore(AbstractMetricsStore):
     def dump(self) -> dict[str, int]:
         return asdict(self)
 
-
-class MyMetadata(Metadata):
-    custom_field: str
+    @contextmanager
+    def command_processing_timer(self, command: GenericCommand[Any]) -> Iterator[None]:
+        start_time = time.time()
+        yield
+        self.processing_time = time.time() - start_time
 
 
 class DummyError(enum.Enum):
@@ -185,26 +196,6 @@ class AsyncDummyUnitOfWorkWithEvents(
     async def rollback(self) -> None: ...
 
 
-class DummyCommand(GenericCommand[MyMetadata]):
-    id: str = Field(...)
-    metadata: MyMetadata = MyMetadata(
-        name="dummy", schema_version=1, custom_field="foo"
-    )
-
-
-class AnotherDummyCommand(GenericCommand[MyMetadata]):
-    id: str = Field(...)
-    metadata: MyMetadata = MyMetadata(name="dummy2", schema_version=1, custom_field="f")
-
-
-class DummyEvent(GenericEvent[MyMetadata]):
-    id: str = Field(...)
-    increment: int = Field(...)
-    metadata: MyMetadata = MyMetadata(
-        name="dummied", schema_version=1, published=True, custom_field="foo"
-    )
-
-
 @pytest.fixture
 def foo_factory() -> type[DummyModel]:
     return DummyModel
@@ -274,13 +265,3 @@ def notifier():
 @pytest.fixture
 def bus(notifier: type[Notifier]) -> AsyncMessageBus[Repositories]:
     return AsyncMessageBus(notifier=notifier)
-
-
-@pytest.fixture
-def dummy_command() -> DummyCommand:
-    return DummyCommand(id="dummy_cmd")
-
-
-@pytest.fixture
-def dummy_event() -> DummyEvent:
-    return DummyEvent(id="dummy_evt", increment=1)

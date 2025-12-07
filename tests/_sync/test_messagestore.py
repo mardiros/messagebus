@@ -1,8 +1,6 @@
 from messagebus.service._sync.registry import SyncMessageBus
 from messagebus.service._sync.unit_of_work import SyncUnitOfWorkTransaction
 from tests._sync.conftest import (
-    DummyCommand,
-    DummyEvent,
     DummyModel,
     MyMetadata,
     Repositories,
@@ -10,6 +8,7 @@ from tests._sync.conftest import (
     SyncDummyUnitOfWorkWithEvents,
     SyncEventstreamTransport,
 )
+from tests.conftest import DummyCommand, DummyEvent
 
 
 def listen_command(

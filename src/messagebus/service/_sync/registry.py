@@ -126,18 +126,12 @@ class SyncMessageBus(Generic[TRepositories]):
                 f"type {msg_type} should be a command or an event"
             )
 
-    def handle(
+    def _handle(
         self,
         command: GenericCommand[Any],
         uow: SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore],
         **transient_dependencies: Any,
     ) -> Any:
-        """
-        Notify listener of that event registered with `messagebus.add_listener`.
-        Return the first event from the command.
-
-        :param message: The message to handle, should be a command.
-        """
         dependencies = {k: uow.add_listener(v()) for k, v in self.dependencies.items()}
         if transient_dependencies:
             [uow.add_listener(d) for d in transient_dependencies.values()]
@@ -167,6 +161,21 @@ class SyncMessageBus(Generic[TRepositories]):
             uow.messagestore.add(message)
             idx += 1
         return ret
+
+    def handle(
+        self,
+        command: GenericCommand[Any],
+        uow: SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore],
+        **transient_dependencies: Any,
+    ) -> Any:
+        """
+        Notify listener of that event registered with `messagebus.add_listener`.
+        Return the first event from the command.
+
+        :param message: The message to handle, should be a command.
+        """
+        with uow.metrics_store.command_processing_timer(command):
+            return self._handle(command, uow, **transient_dependencies)
 
     def scan(
         self,

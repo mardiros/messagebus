@@ -59,6 +59,10 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncMessageStore]):
     def messagestore(self) -> AsyncAbstractMessageStoreRepository:
         return self.uow.messagestore
 
+    @property
+    def metrics_store(self) -> AbstractMetricsStore:
+        return self.uow.metrics_store
+
     def add_listener(self, listener: AsyncDependency) -> AsyncDependency:
         self._hooks.append(listener)
         return listener

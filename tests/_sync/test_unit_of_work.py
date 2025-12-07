@@ -72,6 +72,7 @@ def test_transaction_rollback_on_error(
         "transaction_failed_count": 1,
         "transaction_rollback_count": 1,
         "processed_count": {},
+        "processing_time": 0,
     }
 
 
@@ -91,6 +92,7 @@ def test_transaction_rollback_explicit_commit(
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
         "processed_count": {},
+        "processing_time": 0,
     }
 
 
@@ -108,6 +110,7 @@ def test_transaction_invalid_state(
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
         "processed_count": {},
+        "processing_time": 0,
     }
 
 
@@ -127,6 +130,7 @@ def test_transaction_invalid_usage(
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
         "processed_count": {},
+        "processing_time": 0,
     }
 
 
@@ -145,6 +149,7 @@ def test_transaction_commit_after_rollback(
         "transaction_failed_count": 1,
         "transaction_rollback_count": 1,
         "processed_count": {},
+        "processing_time": 0,
     }
 
 
@@ -161,6 +166,7 @@ def test_transaction_commit_twice(uow: SyncDummyUnitOfWork, metrics: DummyMetric
         "transaction_failed_count": 1,
         "transaction_rollback_count": 1,
         "processed_count": {},
+        "processing_time": 0,
     }
 
 
@@ -177,6 +183,7 @@ def test_detach_transaction(uow: SyncDummyUnitOfWork, metrics: DummyMetricsStore
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
         "processed_count": {},
+        "processing_time": 0,
     }
 
     with uow as tuow:
@@ -189,6 +196,7 @@ def test_detach_transaction(uow: SyncDummyUnitOfWork, metrics: DummyMetricsStore
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
         "processed_count": {},
+        "processing_time": 0,
     }
 
     try:
@@ -203,4 +211,5 @@ def test_detach_transaction(uow: SyncDummyUnitOfWork, metrics: DummyMetricsStore
         "transaction_failed_count": 0,
         "transaction_rollback_count": 1,
         "processed_count": {},
+        "processing_time": 0,
     }

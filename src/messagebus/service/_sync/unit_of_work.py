@@ -59,6 +59,10 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories, TSyncMessageStore]):
     def messagestore(self) -> SyncAbstractMessageStoreRepository:
         return self.uow.messagestore
 
+    @property
+    def metrics_store(self) -> AbstractMetricsStore:
+        return self.uow.metrics_store
+
     def add_listener(self, listener: SyncDependency) -> SyncDependency:
         self._hooks.append(listener)
         return listener

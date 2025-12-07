@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Iterator
 
 import pytest
@@ -5,6 +6,7 @@ from prometheus_client import CollectorRegistry
 
 from messagebus import Metadata, TransactionStatus
 from messagebus.infrastructure.observability.metrics import MetricsStore, Singleton
+from tests.conftest import DummyCommand
 
 
 @pytest.fixture()
@@ -104,4 +106,31 @@ def test_prometheusinc_inc_messages_processed_total(
             labels={"name": "dummy", "version": "42"},
         )
         == 1
+    )
+
+
+async def test_prometheusinc_command_processing_timer(
+    metrics: MetricsStore, registry: CollectorRegistry, dummy_command: DummyCommand
+):
+    with metrics.command_processing_timer(dummy_command):
+        await asyncio.sleep(0)
+    assert (
+        registry.get_sample_value(
+            "messagebus_command_processing_seconds_count",
+            labels={
+                "name": dummy_command.metadata.name,
+                "version": str(dummy_command.metadata.schema_version),
+            },
+        )
+        == 1
+    )
+    assert (
+        registry.get_sample_value(
+            "messagebus_command_processing_seconds_sum",
+            labels={
+                "name": dummy_command.metadata.name,
+                "version": str(dummy_command.metadata.schema_version),
+            },
+        )
+        or 0 > 0
     )

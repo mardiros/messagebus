@@ -6,14 +6,13 @@ from messagebus.service._async.registry import AsyncMessageBus, ConfigurationErr
 from tests._async.conftest import (
     AsyncDummyMessageStore,
     AsyncUnitOfWorkTransaction,
-    DummyCommand,
-    DummyEvent,
     DummyMetricsStore,
     DummyModel,
     Notifier,
     Repositories,
 )
 from tests._async.handlers import dummy
+from tests.conftest import DummyCommand, DummyEvent
 
 conftest_mod = __name__.replace("test_registry", "conftest")
 
@@ -110,7 +109,7 @@ def test_messagebus_cannot_register_handler_twice(
     with pytest.raises(ConfigurationError) as ctx:
         bus.add_listener(DummyCommand, listen_command)
     assert (
-        str(ctx.value) == f"<class '{conftest_mod}.DummyCommand'> command "
+        str(ctx.value) == "<class 'tests.conftest.DummyCommand'> command "
         "has been registered twice"
     )
     bus.remove_listener(DummyCommand, listen_command)
@@ -139,7 +138,7 @@ def test_messagebus_cannot_unregister_non_unregistered_handler(
         bus.remove_listener(DummyCommand, listen_command)
 
     assert (
-        str(ctx.value) == f"<class '{conftest_mod}.DummyCommand'> command "
+        str(ctx.value) == "<class 'tests.conftest.DummyCommand'> command "
         "has not been registered"
     )
 
@@ -147,7 +146,7 @@ def test_messagebus_cannot_unregister_non_unregistered_handler(
         bus.remove_listener(DummyEvent, listen_event)
 
     assert (
-        str(ctx.value) == f"<class '{conftest_mod}.DummyEvent'> event "
+        str(ctx.value) == "<class 'tests.conftest.DummyEvent'> event "
         "has not been registered"
     )
 

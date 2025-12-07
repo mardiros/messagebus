@@ -14,6 +14,7 @@ import venusian
 
 from messagebus.domain.model import GenericCommand, GenericEvent, Message
 from messagebus.domain.model.message import TMessage
+from messagebus.infrastructure.observability.metrics import TMetricsStore
 from messagebus.service._sync.dependency import (
     P,
     SyncDependency,
@@ -129,7 +130,7 @@ class SyncMessageBus(Generic[TRepositories]):
     def _handle(
         self,
         command: GenericCommand[Any],
-        uow: SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore],
+        uow: SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore, TMetricsStore],
         **transient_dependencies: Any,
     ) -> Any:
         dependencies = {k: uow.add_listener(v()) for k, v in self.dependencies.items()}
@@ -165,7 +166,7 @@ class SyncMessageBus(Generic[TRepositories]):
     def handle(
         self,
         command: GenericCommand[Any],
-        uow: SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore],
+        uow: SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore, TMetricsStore],
         **transient_dependencies: Any,
     ) -> Any:
         """

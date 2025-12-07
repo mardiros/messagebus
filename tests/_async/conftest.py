@@ -26,7 +26,9 @@ from messagebus.domain.model import (
     Metadata,
     TransactionStatus,
 )
-from messagebus.infrastructure.observability.metrics import AbstractMetricsStore
+from messagebus.infrastructure.observability.metrics import (
+    AbstractMetricsStore,
+)
 from messagebus.service._async.dependency import AsyncDependency
 from messagebus.service._async.eventstream import (
     AsyncAbstractEventstreamTransport,
@@ -166,7 +168,7 @@ class AsyncDummyMessageStore(AsyncAbstractMessageStoreRepository):
 
 
 class AsyncDummyUnitOfWork(
-    AsyncAbstractUnitOfWork[Repositories, AsyncDummyMessageStore]
+    AsyncAbstractUnitOfWork[Repositories, AsyncDummyMessageStore, DummyMetricsStore]
 ):
     def __init__(self) -> None:
         super().__init__()
@@ -183,7 +185,7 @@ class AsyncDummyUnitOfWork(
 
 
 class AsyncDummyUnitOfWorkWithEvents(
-    AsyncAbstractUnitOfWork[Repositories, AsyncDummyMessageStore]
+    AsyncAbstractUnitOfWork[Repositories, AsyncDummyMessageStore, DummyMetricsStore]
 ):
     def __init__(self, publisher: AsyncEventstreamPublisher | None) -> None:
         self.foos = AsyncFooRepository()
@@ -214,7 +216,9 @@ async def uow() -> AsyncIterator[AsyncDummyUnitOfWork]:
 @pytest.fixture
 async def tuow(
     uow: AsyncDummyUnitOfWork,
-) -> AsyncIterator[AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore]]:
+) -> AsyncIterator[
+    AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore, DummyMetricsStore]
+]:
     async with uow as tuow:
         yield tuow
         await tuow.rollback()

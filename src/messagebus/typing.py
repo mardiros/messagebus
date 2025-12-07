@@ -16,8 +16,8 @@ log = logging.getLogger(__name__)
 
 P = ParamSpec("P")
 
-TAsyncUow = TypeVar("TAsyncUow", bound=AsyncAbstractUnitOfWork[Any, Any])
-TSyncUow = TypeVar("TSyncUow", bound=SyncAbstractUnitOfWork[Any, Any])
+TAsyncUow = TypeVar("TAsyncUow", bound=AsyncAbstractUnitOfWork[Any, Any, Any])
+TSyncUow = TypeVar("TSyncUow", bound=SyncAbstractUnitOfWork[Any, Any, Any])
 TMessage = TypeVar("TMessage", bound=Message[Any])
 
 AsyncMessageHandler = Callable[

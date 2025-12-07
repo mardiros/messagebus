@@ -2,6 +2,7 @@ from typing import Any
 
 import pytest
 
+from messagebus.infrastructure.observability.metrics import MetricsStore
 from messagebus.service._async.registry import AsyncMessageBus, ConfigurationError
 from tests._async.conftest import (
     AsyncDummyMessageStore,
@@ -19,7 +20,7 @@ conftest_mod = __name__.replace("test_registry", "conftest")
 
 async def listen_command(
     cmd: DummyCommand,
-    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore],
+    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore, MetricsStore],
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)
@@ -30,7 +31,7 @@ async def listen_command(
 
 async def listen_event(
     cmd: DummyEvent,
-    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore],
+    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore, MetricsStore],
 ) -> None:
     """This event is indented to be fire by the message bus."""
     rfoo = await uow.foos.get(cmd.id)
@@ -40,7 +41,9 @@ async def listen_event(
 
 async def test_messagebus(
     bus: AsyncMessageBus[Repositories],
-    tuow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore],
+    tuow: AsyncUnitOfWorkTransaction[
+        Repositories, AsyncDummyMessageStore, MetricsStore
+    ],
     metrics: DummyMetricsStore,
 ):
     """
@@ -91,7 +94,9 @@ async def test_messagebus(
 
 async def test_messagebus_handle_only_message(
     bus: AsyncMessageBus[Repositories],
-    tuow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore],
+    tuow: AsyncUnitOfWorkTransaction[
+        Repositories, AsyncDummyMessageStore, MetricsStore
+    ],
 ):
     class Msg:
         def __repr__(self):
@@ -185,7 +190,7 @@ def test_scan_relative(bus: AsyncMessageBus[Any]):
 
 async def listen_command_with_dependency(
     cmd: DummyCommand,
-    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore],
+    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore, MetricsStore],
     dummy_dep: Notifier,
     dummy_dep2: Notifier | None = None,
 ) -> DummyModel:
@@ -196,7 +201,7 @@ async def listen_command_with_dependency(
 
 
 async def test_messagebus_dependency(
-    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore],
+    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore, MetricsStore],
 ):
     d: dict[str, str] = {}
     bus = AsyncMessageBus[Repositories](dummy_dep=d)

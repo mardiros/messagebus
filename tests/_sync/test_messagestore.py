@@ -1,6 +1,7 @@
 from messagebus.service._sync.registry import SyncMessageBus
 from messagebus.service._sync.unit_of_work import SyncUnitOfWorkTransaction
 from tests._sync.conftest import (
+    DummyMetricsStore,
     DummyModel,
     MyMetadata,
     Repositories,
@@ -13,7 +14,9 @@ from tests.conftest import DummyCommand, DummyEvent
 
 def listen_command(
     cmd: DummyCommand,
-    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore],
+    uow: SyncUnitOfWorkTransaction[
+        Repositories, SyncDummyMessageStore, DummyMetricsStore
+    ],
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)

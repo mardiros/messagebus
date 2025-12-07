@@ -14,6 +14,7 @@ import venusian
 
 from messagebus.domain.model import GenericCommand, GenericEvent, Message
 from messagebus.domain.model.message import TMessage
+from messagebus.infrastructure.observability.metrics import TMetricsStore
 from messagebus.service._async.dependency import (
     AsyncDependency,
     AsyncMessageHandler,
@@ -131,7 +132,9 @@ class AsyncMessageBus(Generic[TRepositories]):
     async def _handle(
         self,
         command: GenericCommand[Any],
-        uow: AsyncUnitOfWorkTransaction[TRepositories, TAsyncMessageStore],
+        uow: AsyncUnitOfWorkTransaction[
+            TRepositories, TAsyncMessageStore, TMetricsStore
+        ],
         **transient_dependencies: Any,
     ) -> Any:
         dependencies = {k: uow.add_listener(v()) for k, v in self.dependencies.items()}
@@ -167,7 +170,9 @@ class AsyncMessageBus(Generic[TRepositories]):
     async def handle(
         self,
         command: GenericCommand[Any],
-        uow: AsyncUnitOfWorkTransaction[TRepositories, TAsyncMessageStore],
+        uow: AsyncUnitOfWorkTransaction[
+            TRepositories, TAsyncMessageStore, TMetricsStore
+        ],
         **transient_dependencies: Any,
     ) -> Any:
         """

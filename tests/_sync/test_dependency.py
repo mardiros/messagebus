@@ -9,6 +9,7 @@ from messagebus.service._sync.unit_of_work import (
     SyncUnitOfWorkTransaction,
 )
 from tests._sync.conftest import (
+    DummyMetricsStore,
     DummyModel,
     Notifier,
     Repositories,
@@ -21,7 +22,9 @@ from tests.conftest import DummyCommand, DummyEvent
 
 def listen_command(
     cmd: DummyCommand,
-    uow: SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore],
+    uow: SyncUnitOfWorkTransaction[
+        Repositories, SyncDummyMessageStore, DummyMetricsStore
+    ],
     notifier: Notifier,
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
@@ -62,7 +65,7 @@ class TransientDependency(SyncDependency):
 
 def listen_with_transient(
     command: DummyCommand,
-    uow: SyncAbstractUnitOfWork[Any, Any],
+    uow: SyncAbstractUnitOfWork[Any, Any, Any],
     tracker: TransientDependency,
 ):
     tracker.tracks.append("tracked")
@@ -101,7 +104,7 @@ def test_transient_dependency_missing(
 
 def listen_with_optional(
     command: DummyCommand,
-    uow: SyncAbstractUnitOfWork[Any, Any],
+    uow: SyncAbstractUnitOfWork[Any, Any, Any],
     tracker: TransientDependency | None = None,
 ):
     if tracker:

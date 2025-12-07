@@ -11,6 +11,7 @@ from messagebus.domain.model import Message
 from messagebus.infrastructure.observability.metrics import (
     AbstractMetricsStore,
     MetricsStore,
+    TMetricsStore,
 )
 
 if TYPE_CHECKING:
@@ -30,7 +31,9 @@ TSyncMessageStore = TypeVar(
 TRepositories = TypeVar("TRepositories", bound=SyncAbstractRepository[Any])
 
 
-class SyncUnitOfWorkTransaction(Generic[TRepositories, TSyncMessageStore]):
+class SyncUnitOfWorkTransaction(
+    Generic[TRepositories, TSyncMessageStore, TMetricsStore]
+):
     """
     Context manager for business transactions of the unit of work.
 
@@ -40,13 +43,14 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories, TSyncMessageStore]):
     of detached for streaming purpose.
     """
 
-    uow: SyncAbstractUnitOfWork[TRepositories, TSyncMessageStore]
+    uow: SyncAbstractUnitOfWork[TRepositories, TSyncMessageStore, TMetricsStore]
     """Associated unit of work instance manipulated in the transaction."""
     status: TransactionStatus
     """Current status of the transaction"""
 
     def __init__(
-        self, uow: SyncAbstractUnitOfWork[TRepositories, TSyncMessageStore]
+        self,
+        uow: SyncAbstractUnitOfWork[TRepositories, TSyncMessageStore, TMetricsStore],
     ) -> None:
         self.status = TransactionStatus.running
         self.uow = uow
@@ -101,7 +105,7 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories, TSyncMessageStore]):
 
     def __enter__(
         self,
-    ) -> SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore]:
+    ) -> SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore, TMetricsStore]:
         """Entering the transaction."""
         if self.status != TransactionStatus.running:
             raise TransactionError("Invalid transaction status.")
@@ -150,7 +154,9 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories, TSyncMessageStore]):
         self._close()
 
 
-class SyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TSyncMessageStore]):
+class SyncAbstractUnitOfWork(
+    abc.ABC, Generic[TRepositories, TSyncMessageStore, TMetricsStore]
+):
     """
     Abstract unit of work.
 
@@ -159,7 +165,7 @@ class SyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TSyncMessageStore])
     has to be declared has attributes.
     """
 
-    metrics_store: AbstractMetricsStore = MetricsStore()
+    metrics_store: TMetricsStore = MetricsStore()  # type: ignore
     messagestore: TSyncMessageStore = SyncSinkholeMessageStoreRepository()  # type: ignore
 
     def collect_new_events(self) -> Iterator[Message[Any]]:
@@ -179,7 +185,7 @@ class SyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TSyncMessageStore])
 
     def __enter__(
         self,
-    ) -> SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore]:
+    ) -> SyncUnitOfWorkTransaction[TRepositories, TSyncMessageStore, TMetricsStore]:
         self.__transaction = SyncUnitOfWorkTransaction(self)
         self.__transaction.__enter__()
         return self.__transaction
@@ -202,4 +208,4 @@ class SyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TSyncMessageStore])
         """Rollback the transation."""
 
 
-TSyncUow = TypeVar("TSyncUow", bound=SyncAbstractUnitOfWork[Any, Any])
+TSyncUow = TypeVar("TSyncUow", bound=SyncAbstractUnitOfWork[Any, Any, Any])

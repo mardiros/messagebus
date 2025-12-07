@@ -17,7 +17,18 @@ class AbstractMetricsStore(abc.ABC):
 
 
 class MetricsStore(AbstractMetricsStore):
+    _instance = None
+    _initialized = False
+
+    def __new__(cls, registry: CollectorRegistry | None = REGISTRY) -> "MetricsStore":
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self, registry: CollectorRegistry | None = REGISTRY) -> None:
+        if self._initialized:
+            return
+        self._initialized = True
         self.transactions_started_total = Counter(
             name="messagebus_transactions_started_total",
             documentation="Total number of unit-of-work transactions that have been started.",

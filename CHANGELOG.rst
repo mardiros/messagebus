@@ -1,3 +1,9 @@
+0.15.0  - Released on 2025-12-07
+--------------------------------
+* The message store created_at is not timezone aware, and in UTC. (breaking change)
+* Typing API updated to get a TUnitOfWork instead of all of its parameters in the transaction type. (breaking change) 
+* The metrics store class can be specified, it is a generic now.
+
 0.14.0  - Released on 2025-12-07
 --------------------------------
 * Implement a metrics store in the unit of work.

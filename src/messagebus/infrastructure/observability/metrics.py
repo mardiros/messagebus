@@ -1,7 +1,7 @@
 import abc
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeVar
 
 from prometheus_client import REGISTRY, CollectorRegistry, Counter, Gauge
 from prometheus_client.metrics import Histogram
@@ -123,3 +123,6 @@ class MetricsStore(AbstractMetricsStore, metaclass=Singleton):
             name=command.metadata.name, version=command.metadata.schema_version
         ).time():
             yield
+
+
+TMetricsStore = TypeVar("TMetricsStore", bound=AbstractMetricsStore)

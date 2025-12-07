@@ -25,7 +25,9 @@ from messagebus.domain.model import (
     Metadata,
     TransactionStatus,
 )
-from messagebus.infrastructure.observability.metrics import AbstractMetricsStore
+from messagebus.infrastructure.observability.metrics import (
+    AbstractMetricsStore,
+)
 from messagebus.service._sync.dependency import SyncDependency
 from messagebus.service._sync.eventstream import (
     SyncAbstractEventstreamTransport,
@@ -164,7 +166,9 @@ class SyncDummyMessageStore(SyncAbstractMessageStoreRepository):
         self.messages.append(message)
 
 
-class SyncDummyUnitOfWork(SyncAbstractUnitOfWork[Repositories, SyncDummyMessageStore]):
+class SyncDummyUnitOfWork(
+    SyncAbstractUnitOfWork[Repositories, SyncDummyMessageStore, DummyMetricsStore]
+):
     def __init__(self) -> None:
         super().__init__()
         self.status = "init"
@@ -180,7 +184,7 @@ class SyncDummyUnitOfWork(SyncAbstractUnitOfWork[Repositories, SyncDummyMessageS
 
 
 class SyncDummyUnitOfWorkWithEvents(
-    SyncAbstractUnitOfWork[Repositories, SyncDummyMessageStore]
+    SyncAbstractUnitOfWork[Repositories, SyncDummyMessageStore, DummyMetricsStore]
 ):
     def __init__(self, publisher: SyncEventstreamPublisher | None) -> None:
         self.foos = SyncFooRepository()
@@ -211,7 +215,9 @@ def uow() -> Iterator[SyncDummyUnitOfWork]:
 @pytest.fixture
 def tuow(
     uow: SyncDummyUnitOfWork,
-) -> Iterator[SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore]]:
+) -> Iterator[
+    SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore, DummyMetricsStore]
+]:
     with uow as tuow:
         yield tuow
         tuow.rollback()

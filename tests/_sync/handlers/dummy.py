@@ -7,20 +7,20 @@ from tests.conftest import AnotherDummyCommand, DummyCommand, DummyEvent
 
 
 @sync_listen
-def handler(command: DummyCommand, uow: SyncAbstractUnitOfWork[Any, Any]): ...
+def handler(command: DummyCommand, uow: SyncAbstractUnitOfWork[Any, Any, Any]): ...
 
 
 @sync_listen
-def handler_evt1(command: DummyEvent, uow: SyncAbstractUnitOfWork[Any, Any]): ...
+def handler_evt1(command: DummyEvent, uow: SyncAbstractUnitOfWork[Any, Any, Any]): ...
 
 
 @sync_listen
-def handler_evt2(command: DummyEvent, uow: SyncAbstractUnitOfWork[Any, Any]): ...
+def handler_evt2(command: DummyEvent, uow: SyncAbstractUnitOfWork[Any, Any, Any]): ...
 
 
 @sync_listen
 def handler_with_dependency_injection(
     command: AnotherDummyCommand,
-    uow: SyncAbstractUnitOfWork[Any, Any],
+    uow: SyncAbstractUnitOfWork[Any, Any, Any],
     notifier: Notifier,
 ): ...

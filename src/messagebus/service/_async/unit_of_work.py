@@ -11,6 +11,7 @@ from messagebus.domain.model import Message
 from messagebus.infrastructure.observability.metrics import (
     AbstractMetricsStore,
     MetricsStore,
+    TMetricsStore,
 )
 
 if TYPE_CHECKING:
@@ -30,7 +31,9 @@ TAsyncMessageStore = TypeVar(
 TRepositories = TypeVar("TRepositories", bound=AsyncAbstractRepository[Any])
 
 
-class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncMessageStore]):
+class AsyncUnitOfWorkTransaction(
+    Generic[TRepositories, TAsyncMessageStore, TMetricsStore]
+):
     """
     Context manager for business transactions of the unit of work.
 
@@ -40,13 +43,14 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncMessageStore]):
     of detached for streaming purpose.
     """
 
-    uow: AsyncAbstractUnitOfWork[TRepositories, TAsyncMessageStore]
+    uow: AsyncAbstractUnitOfWork[TRepositories, TAsyncMessageStore, TMetricsStore]
     """Associated unit of work instance manipulated in the transaction."""
     status: TransactionStatus
     """Current status of the transaction"""
 
     def __init__(
-        self, uow: AsyncAbstractUnitOfWork[TRepositories, TAsyncMessageStore]
+        self,
+        uow: AsyncAbstractUnitOfWork[TRepositories, TAsyncMessageStore, TMetricsStore],
     ) -> None:
         self.status = TransactionStatus.running
         self.uow = uow
@@ -101,7 +105,7 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncMessageStore]):
 
     async def __aenter__(
         self,
-    ) -> AsyncUnitOfWorkTransaction[TRepositories, TAsyncMessageStore]:
+    ) -> AsyncUnitOfWorkTransaction[TRepositories, TAsyncMessageStore, TMetricsStore]:
         """Entering the transaction."""
         if self.status != TransactionStatus.running:
             raise TransactionError("Invalid transaction status.")
@@ -150,7 +154,9 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncMessageStore]):
         await self._close()
 
 
-class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TAsyncMessageStore]):
+class AsyncAbstractUnitOfWork(
+    abc.ABC, Generic[TRepositories, TAsyncMessageStore, TMetricsStore]
+):
     """
     Abstract unit of work.
 
@@ -159,7 +165,7 @@ class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TAsyncMessageStore
     has to be declared has attributes.
     """
 
-    metrics_store: AbstractMetricsStore = MetricsStore()
+    metrics_store: TMetricsStore = MetricsStore()  # type: ignore
     messagestore: TAsyncMessageStore = AsyncSinkholeMessageStoreRepository()  # type: ignore
 
     def collect_new_events(self) -> Iterator[Message[Any]]:
@@ -179,7 +185,7 @@ class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TAsyncMessageStore
 
     async def __aenter__(
         self,
-    ) -> AsyncUnitOfWorkTransaction[TRepositories, TAsyncMessageStore]:
+    ) -> AsyncUnitOfWorkTransaction[TRepositories, TAsyncMessageStore, TMetricsStore]:
         self.__transaction = AsyncUnitOfWorkTransaction(self)
         await self.__transaction.__aenter__()
         return self.__transaction
@@ -202,4 +208,4 @@ class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TAsyncMessageStore
         """Rollback the transation."""
 
 
-TAsyncUow = TypeVar("TAsyncUow", bound=AsyncAbstractUnitOfWork[Any, Any])
+TAsyncUow = TypeVar("TAsyncUow", bound=AsyncAbstractUnitOfWork[Any, Any, Any])

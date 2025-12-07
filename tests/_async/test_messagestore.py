@@ -4,6 +4,7 @@ from tests._async.conftest import (
     AsyncDummyMessageStore,
     AsyncDummyUnitOfWorkWithEvents,
     AsyncEventstreamTransport,
+    DummyMetricsStore,
     DummyModel,
     MyMetadata,
     Repositories,
@@ -13,7 +14,9 @@ from tests.conftest import DummyCommand, DummyEvent
 
 async def listen_command(
     cmd: DummyCommand,
-    uow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore],
+    uow: AsyncUnitOfWorkTransaction[
+        Repositories, AsyncDummyMessageStore, DummyMetricsStore
+    ],
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
     foo = DummyModel(id=cmd.id, counter=0)

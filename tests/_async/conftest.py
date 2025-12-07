@@ -184,9 +184,7 @@ class AsyncDummyUnitOfWork(
         self.status = "aborted"
 
 
-class AsyncDummyUnitOfWorkWithEvents(
-    AsyncAbstractUnitOfWork[Repositories, AsyncDummyMessageStore, DummyMetricsStore]
-):
+class AsyncDummyUnitOfWorkWithEvents(AsyncAbstractUnitOfWork[Any, Any, Any]):
     def __init__(self, publisher: AsyncEventstreamPublisher | None) -> None:
         self.foos = AsyncFooRepository()
         self.bars = AsyncDummyRepository()
@@ -216,9 +214,7 @@ async def uow() -> AsyncIterator[AsyncDummyUnitOfWork]:
 @pytest.fixture
 async def tuow(
     uow: AsyncDummyUnitOfWork,
-) -> AsyncIterator[
-    AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore, DummyMetricsStore]
-]:
+) -> AsyncIterator[AsyncUnitOfWorkTransaction[AsyncDummyUnitOfWork]]:
     async with uow as tuow:
         yield tuow
         await tuow.rollback()
@@ -267,5 +263,5 @@ def notifier():
 
 
 @pytest.fixture
-def bus(notifier: type[Notifier]) -> AsyncMessageBus[Repositories]:
+def bus(notifier: type[Notifier]) -> AsyncMessageBus[AsyncDummyUnitOfWork]:
     return AsyncMessageBus(notifier=notifier)

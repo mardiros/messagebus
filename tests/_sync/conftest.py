@@ -183,9 +183,7 @@ class SyncDummyUnitOfWork(
         self.status = "aborted"
 
 
-class SyncDummyUnitOfWorkWithEvents(
-    SyncAbstractUnitOfWork[Repositories, SyncDummyMessageStore, DummyMetricsStore]
-):
+class SyncDummyUnitOfWorkWithEvents(SyncAbstractUnitOfWork[Any, Any, Any]):
     def __init__(self, publisher: SyncEventstreamPublisher | None) -> None:
         self.foos = SyncFooRepository()
         self.bars = SyncDummyRepository()
@@ -215,9 +213,7 @@ def uow() -> Iterator[SyncDummyUnitOfWork]:
 @pytest.fixture
 def tuow(
     uow: SyncDummyUnitOfWork,
-) -> Iterator[
-    SyncUnitOfWorkTransaction[Repositories, SyncDummyMessageStore, DummyMetricsStore]
-]:
+) -> Iterator[SyncUnitOfWorkTransaction[SyncDummyUnitOfWork]]:
     with uow as tuow:
         yield tuow
         tuow.rollback()
@@ -266,5 +262,5 @@ def notifier():
 
 
 @pytest.fixture
-def bus(notifier: type[Notifier]) -> SyncMessageBus[Repositories]:
+def bus(notifier: type[Notifier]) -> SyncMessageBus[SyncDummyUnitOfWork]:
     return SyncMessageBus(notifier=notifier)

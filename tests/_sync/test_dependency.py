@@ -9,11 +9,9 @@ from messagebus.service._sync.unit_of_work import (
     SyncUnitOfWorkTransaction,
 )
 from tests._sync.conftest import (
-    DummyMetricsStore,
     DummyModel,
     Notifier,
-    Repositories,
-    SyncDummyMessageStore,
+    SyncDummyUnitOfWork,
     SyncDummyUnitOfWorkWithEvents,
     SyncEventstreamTransport,
 )
@@ -22,9 +20,7 @@ from tests.conftest import DummyCommand, DummyEvent
 
 def listen_command(
     cmd: DummyCommand,
-    uow: SyncUnitOfWorkTransaction[
-        Repositories, SyncDummyMessageStore, DummyMetricsStore
-    ],
+    uow: SyncUnitOfWorkTransaction[SyncDummyUnitOfWork],
     notifier: Notifier,
 ) -> DummyModel:
     """This command raise an event played by the message bus."""
@@ -36,7 +32,7 @@ def listen_command(
 
 
 def test_store_events_and_publish(
-    bus: SyncMessageBus[Repositories],
+    bus: SyncMessageBus[SyncDummyUnitOfWorkWithEvents],
     eventstream_transport: SyncEventstreamTransport,
     uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
@@ -72,7 +68,7 @@ def listen_with_transient(
 
 
 def test_transient_dependency(
-    bus: SyncMessageBus[Repositories],
+    bus: SyncMessageBus[SyncDummyUnitOfWorkWithEvents],
     eventstream_transport: SyncEventstreamTransport,
     uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
@@ -88,7 +84,7 @@ def test_transient_dependency(
 
 
 def test_transient_dependency_missing(
-    bus: SyncMessageBus[Repositories],
+    bus: SyncMessageBus[SyncDummyUnitOfWorkWithEvents],
     eventstream_transport: SyncEventstreamTransport,
     uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
@@ -112,7 +108,7 @@ def listen_with_optional(
 
 
 def test_optional_dependency(
-    bus: SyncMessageBus[Repositories],
+    bus: SyncMessageBus[SyncDummyUnitOfWorkWithEvents],
     eventstream_transport: SyncEventstreamTransport,
     uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,
@@ -128,7 +124,7 @@ def test_optional_dependency(
 
 
 def test_optional_dependency_missing(
-    bus: SyncMessageBus[Repositories],
+    bus: SyncMessageBus[SyncDummyUnitOfWorkWithEvents],
     eventstream_transport: SyncEventstreamTransport,
     uow_with_messagestore: SyncDummyUnitOfWorkWithEvents,
     dummy_command: DummyCommand,

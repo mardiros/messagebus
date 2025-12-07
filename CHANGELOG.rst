@@ -1,3 +1,8 @@
+0.14.0  - Released on 2025-12-07
+--------------------------------
+* Implement a metrics store in the unit of work.
+* Expose metrics in prometheus registry by default.
+
 0.13.0  - Released on 2025-05-03
 --------------------------------
 * Breaking Change: eventstore property has been rename messagestore in the unit of work.

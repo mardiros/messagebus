@@ -25,9 +25,7 @@ from messagebus.domain.model import (
     Metadata,
     TransactionStatus,
 )
-from messagebus.infrastructure.observability.metrics import (
-    AbstractMetricsStore,
-)
+from messagebus.ports.observability import AbstractMetricsStore
 from messagebus.service._sync.dependency import SyncDependency
 from messagebus.service._sync.eventstream import (
     SyncAbstractEventstreamTransport,

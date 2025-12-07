@@ -1,34 +1,15 @@
 import abc
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Any, ClassVar, TypeVar
+from typing import Any, ClassVar
 
 from prometheus_client import REGISTRY, CollectorRegistry, Counter, Gauge
 from prometheus_client.metrics import Histogram
 
 from messagebus.domain.model import GenericCommand, Metadata, TransactionStatus
+from messagebus.ports.observability import AbstractMetricsStore
 
 DEFAULT_COMMAND_PROCESSING_SECONDS_BUCKETS = [0.01 * 2**x for x in range(10)]
-
-
-class AbstractMetricsStore(abc.ABC):
-    @abc.abstractmethod
-    def inc_beginned_transaction_count(self) -> None: ...
-
-    @abc.abstractmethod
-    def inc_transaction_failed(self) -> None: ...
-
-    @abc.abstractmethod
-    def inc_transaction_closed_count(self, status: TransactionStatus) -> None: ...
-
-    @abc.abstractmethod
-    def inc_messages_processed_total(self, msg_metadata: Metadata) -> None: ...
-
-    @abc.abstractmethod
-    @contextmanager
-    def command_processing_timer(
-        self, command: GenericCommand[Any]
-    ) -> Iterator[None]: ...
 
 
 class Singleton(abc.ABCMeta):
@@ -123,6 +104,3 @@ class MetricsStore(AbstractMetricsStore, metaclass=Singleton):
             name=command.metadata.name, version=command.metadata.schema_version
         ).time():
             yield
-
-
-TMetricsStore = TypeVar("TMetricsStore", bound=AbstractMetricsStore)

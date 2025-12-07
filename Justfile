@@ -42,18 +42,8 @@ cov test_suite=default_test_suite:
     xdg-open htmlcov/index.html
 
 release major_minor_patch: gensync test && changelog
-    #! /bin/bash
-    # Try to bump the version first
-    if ! uvx pdm bump {{major_minor_patch}}; then
-        # If it fails, check if pdm-bump is installed
-        if ! uvx pdm self list | grep -q pdm-bump; then
-            # If not installed, add pdm-bump
-            uvx pdm self add pdm-bump
-        fi
-        # Attempt to bump the version again
-        uvx pdm bump {{major_minor_patch}}
-    fi
-    uv sync
+    uvx --with=pdm,pdm-bump --python-preference system pdm bump {{major_minor_patch}}
+    uv sync --group dev --frozen
 
 
 changelog:

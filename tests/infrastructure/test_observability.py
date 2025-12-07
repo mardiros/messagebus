@@ -96,6 +96,27 @@ def test_prometheus_transaction_rollback(
     )
 
 
+def test_prometheus_transaction_failed(
+    metrics: MetricsStore, registry: CollectorRegistry
+):
+    metrics.inc_transaction_failed()
+    assert registry.get_sample_value("messagebus_transactions_started_total") == 0
+    assert registry.get_sample_value("messagebus_transactions_in_progress") == 0
+    assert registry.get_sample_value("messagebus_transactions_failed_total") == 1
+    assert (
+        registry.get_sample_value(
+            "messagebus_transactions_closed_total", labels={"status": "committed"}
+        )
+        is None
+    )
+    assert (
+        registry.get_sample_value(
+            "messagebus_transactions_closed_total", labels={"status": "rolledback"}
+        )
+        is None
+    )
+
+
 def test_prometheusinc_inc_messages_processed_total(
     metrics: MetricsStore, registry: CollectorRegistry
 ):

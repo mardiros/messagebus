@@ -32,8 +32,10 @@ def test_model_repr_with_messages():
 def test_model_equal():
     assert Foo(name="joe") == Foo(name="joe")
     assert Foo(name="joe") != Bar(name="joe")
+    assert Foo(name="joe") != object()
 
 
 def test_message_equal():
     assert FooCreated(name="joe") == FooCreated(name="joe")
     assert FooCreated(name="joe") != BarCreated(name="joe")
+    assert FooCreated(name="joe") != object()

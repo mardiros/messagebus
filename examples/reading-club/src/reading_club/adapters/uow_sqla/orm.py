@@ -18,7 +18,7 @@ messages = Table(
     "messages",
     metadata,
     Column("id", Uuid(), nullable=False, primary_key=True),
-    Column("created_at", DateTime(), nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False),
     Column("metadata", JSON(), nullable=False),
     Column("payload", JSON(), nullable=False),
     Index("idx_messages_created_at", "created_at"),

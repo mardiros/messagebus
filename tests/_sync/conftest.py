@@ -1,5 +1,6 @@
 import enum
 from collections.abc import Iterator, Mapping, MutableMapping, MutableSequence
+from dataclasses import asdict, dataclass
 from types import EllipsisType
 from typing import (
     Any,
@@ -16,7 +17,9 @@ from messagebus.domain.model import (
     GenericModel,
     Message,
     Metadata,
+    TransactionStatus,
 )
+from messagebus.infrastructure.observability.metrics import AbstractMetricsStore
 from messagebus.service._sync.dependency import SyncDependency
 from messagebus.service._sync.eventstream import (
     SyncAbstractEventstreamTransport,
@@ -31,6 +34,32 @@ from messagebus.service._sync.unit_of_work import (
     SyncAbstractUnitOfWork,
     SyncUnitOfWorkTransaction,
 )
+
+
+@dataclass
+class DummyMetricsStore(AbstractMetricsStore):
+    beginned_transaction_count: int = 0
+    transaction_failed_count: int = 0
+    transaction_commit_count: int = 0
+    transaction_rollback_count: int = 0
+
+    def inc_beginned_transaction_count(self):
+        self.beginned_transaction_count += 1
+
+    def inc_transaction_failed(self):
+        self.transaction_failed_count += 1
+
+    def inc_transaction_closed_count(self, status: TransactionStatus):
+        match status:
+            case TransactionStatus.committed:
+                self.transaction_commit_count += 1
+            case TransactionStatus.rolledback:
+                self.transaction_rollback_count += 1
+            case _:
+                assert True, f"Should nevver report {status}"
+
+    def dump(self) -> dict[str, int]:
+        return asdict(self)
 
 
 class MyMetadata(Metadata):
@@ -122,6 +151,7 @@ class SyncDummyUnitOfWork(SyncAbstractUnitOfWork[Repositories, SyncDummyMessageS
     def __init__(self) -> None:
         super().__init__()
         self.status = "init"
+        self.metrics_store = DummyMetricsStore()
         self.foos = SyncFooRepository()
         self.bars = SyncDummyRepository()
 
@@ -139,6 +169,7 @@ class SyncDummyUnitOfWorkWithEvents(
         self.foos = SyncFooRepository()
         self.bars = SyncDummyRepository()
         self.messagestore = SyncDummyMessageStore(publisher=publisher)
+        self.metrics_store = DummyMetricsStore()
 
     def commit(self) -> None: ...
 
@@ -187,6 +218,11 @@ def tuow(
     with uow as tuow:
         yield tuow
         tuow.rollback()
+
+
+@pytest.fixture
+def metrics(uow: SyncDummyUnitOfWork) -> AbstractMetricsStore:
+    return uow.metrics_store
 
 
 @pytest.fixture

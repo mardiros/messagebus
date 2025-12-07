@@ -6,7 +6,12 @@ from messagebus.service._async.unit_of_work import (
     TransactionError,
     TransactionStatus,
 )
-from tests._async.conftest import AsyncDummyUnitOfWork, DummyModel, MyMetadata
+from tests._async.conftest import (
+    AsyncDummyUnitOfWork,
+    DummyMetricsStore,
+    DummyModel,
+    MyMetadata,
+)
 
 
 class FooCreated(GenericEvent[MyMetadata]):
@@ -52,7 +57,9 @@ async def test_collect_new_events(
         next(iter)
 
 
-async def test_transaction_rollback_on_error(uow: AsyncDummyUnitOfWork):
+async def test_transaction_rollback_on_error(
+    uow: AsyncDummyUnitOfWork, metrics: DummyMetricsStore
+):
     tuow = None
     try:
         async with uow as tuow:
@@ -61,9 +68,17 @@ async def test_transaction_rollback_on_error(uow: AsyncDummyUnitOfWork):
         ...
     assert tuow is not None
     assert tuow.status == TransactionStatus.rolledback
+    assert metrics.dump() == {
+        "beginned_transaction_count": 1,
+        "transaction_commit_count": 0,
+        "transaction_failed_count": 1,
+        "transaction_rollback_count": 1,
+    }
 
 
-async def test_transaction_rollback_explicit_commit(uow: AsyncDummyUnitOfWork):
+async def test_transaction_rollback_explicit_commit(
+    uow: AsyncDummyUnitOfWork, metrics: DummyMetricsStore
+):
     with pytest.raises(TransactionError) as ctx:
         async with uow as tuow:
             tuow.foos  # noqa B018
@@ -71,17 +86,33 @@ async def test_transaction_rollback_explicit_commit(uow: AsyncDummyUnitOfWork):
     assert str(ctx.value).endswith(
         "Transaction must be explicitly close. Missing commit/rollback call."
     )
+    assert metrics.dump() == {
+        "beginned_transaction_count": 1,
+        "transaction_commit_count": 0,
+        "transaction_failed_count": 0,
+        "transaction_rollback_count": 0,
+    }
 
 
-async def test_transaction_invalid_state(uow: AsyncDummyUnitOfWork):
+async def test_transaction_invalid_state(
+    uow: AsyncDummyUnitOfWork, metrics: DummyMetricsStore
+):
     with pytest.raises(TransactionError) as ctx:
         async with uow as tuow:
             tuow.status = TransactionStatus.closed
 
     assert str(ctx.value).endswith("Transaction is closed.")
+    assert metrics.dump() == {
+        "beginned_transaction_count": 1,
+        "transaction_commit_count": 0,
+        "transaction_failed_count": 0,
+        "transaction_rollback_count": 0,
+    }
 
 
-async def test_transaction_invalid_usage(uow: AsyncDummyUnitOfWork):
+async def test_transaction_invalid_usage(
+    uow: AsyncDummyUnitOfWork, metrics: DummyMetricsStore
+):
     with pytest.raises(TransactionError) as ctx:
         transaction = AsyncUnitOfWorkTransaction(uow)
         transaction.status = TransactionStatus.committed
@@ -89,39 +120,84 @@ async def test_transaction_invalid_usage(uow: AsyncDummyUnitOfWork):
             ...
 
     assert str(ctx.value).endswith("Invalid transaction status.")
+    assert metrics.dump() == {
+        "beginned_transaction_count": 0,
+        "transaction_commit_count": 0,
+        "transaction_failed_count": 0,
+        "transaction_rollback_count": 0,
+    }
 
 
-async def test_transaction_commit_after_rollback(uow: AsyncDummyUnitOfWork):
+async def test_transaction_commit_after_rollback(
+    uow: AsyncDummyUnitOfWork, metrics: DummyMetricsStore
+):
     with pytest.raises(TransactionError) as ctx:
         async with uow as tuow:
             await tuow.rollback()
             await tuow.commit()
 
     assert str(ctx.value).endswith("Transaction already closed (rolledback).")
+    assert metrics.dump() == {
+        "beginned_transaction_count": 1,
+        "transaction_commit_count": 0,
+        "transaction_failed_count": 1,
+        "transaction_rollback_count": 1,
+    }
 
 
-async def test_transaction_commit_twice(uow: AsyncDummyUnitOfWork):
+async def test_transaction_commit_twice(
+    uow: AsyncDummyUnitOfWork, metrics: DummyMetricsStore
+):
     with pytest.raises(TransactionError) as ctx:
         async with uow as tuow:
             await tuow.commit()
             await tuow.commit()
 
     assert str(ctx.value).endswith("Transaction already closed (committed).")
+    assert metrics.dump() == {
+        "beginned_transaction_count": 1,
+        "transaction_commit_count": 0,
+        "transaction_failed_count": 1,
+        "transaction_rollback_count": 1,
+    }
 
 
-async def test_detach_transaction(uow: AsyncDummyUnitOfWork):
+async def test_detach_transaction(
+    uow: AsyncDummyUnitOfWork, metrics: DummyMetricsStore
+):
     async with uow as tuow:
         await uow.foos.add(DummyModel(id="1", counter=1))
         await uow.foos.add(DummyModel(id="2", counter=1))
         await uow.foos.add(DummyModel(id="3", counter=1))
         await tuow.commit()
 
+    assert metrics.dump() == {
+        "beginned_transaction_count": 1,
+        "transaction_commit_count": 1,
+        "transaction_failed_count": 0,
+        "transaction_rollback_count": 0,
+    }
+
     async with uow as tuow:
         iter_foos = uow.foos.find(id="2")
         await tuow.detach()
+
+    assert metrics.dump() == {
+        "beginned_transaction_count": 2,
+        "transaction_commit_count": 1,
+        "transaction_failed_count": 0,
+        "transaction_rollback_count": 0,
+    }
 
     try:
         foos = [foo async for foo in iter_foos]
         assert foos == [DummyModel(id="2", counter=1)]
     finally:
         await tuow.close()
+
+    assert metrics.dump() == {
+        "beginned_transaction_count": 2,
+        "transaction_commit_count": 1,
+        "transaction_failed_count": 0,
+        "transaction_rollback_count": 1,
+    }

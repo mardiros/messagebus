@@ -8,6 +8,10 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from messagebus.domain.model import Message
+from messagebus.infrastructure.observability.metrics import (
+    AbstractMetricsStore,
+    MetricsStore,
+)
 
 if TYPE_CHECKING:
     from messagebus.service._sync.dependency import SyncDependency  # coverage: ignore
@@ -97,6 +101,7 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories, TSyncMessageStore]):
         """Entering the transaction."""
         if self.status != TransactionStatus.running:
             raise TransactionError("Invalid transaction status.")
+        self.uow.metrics_store.inc_beginned_transaction_count()
         return self
 
     def __exit__(
@@ -107,7 +112,9 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories, TSyncMessageStore]):
     ) -> None:
         """Rollback in case of exception."""
         if exc:
+            self.uow.metrics_store.inc_transaction_failed()
             self.rollback()
+            self.uow.metrics_store.inc_transaction_closed_count(self.status)
             return
 
         if self.status != TransactionStatus.streaming:
@@ -122,6 +129,8 @@ class SyncUnitOfWorkTransaction(Generic[TRepositories, TSyncMessageStore]):
             )
         if self.status == TransactionStatus.committed:
             self.uow.messagestore.publish_eventstream()
+
+        self.uow.metrics_store.inc_transaction_closed_count(self.status)
         self.status = TransactionStatus.closed
 
     def close(self) -> None:
@@ -146,6 +155,7 @@ class SyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TSyncMessageStore])
     has to be declared has attributes.
     """
 
+    metrics_store: AbstractMetricsStore = MetricsStore()
     messagestore: TSyncMessageStore = SyncSinkholeMessageStoreRepository()  # type: ignore
 
     def collect_new_events(self) -> Iterator[Message[Any]]:

@@ -2,9 +2,9 @@ from lastuuid.dummies import uuidgen
 from reading_club.domain.messages import RegisterBook
 from reading_club.domain.model import Book
 from reading_club.service.uow import AbstractUnitOfWork
+from tests.conftest import EventstreamTransport
 
 from messagebus import AsyncMessageBus
-from tests.conftest import EventstreamTransport
 
 
 async def test_bus_handler(

@@ -128,18 +128,12 @@ class AsyncMessageBus(Generic[TRepositories]):
                 f"type {msg_type} should be a command or an event"
             )
 
-    async def handle(
+    async def _handle(
         self,
         command: GenericCommand[Any],
         uow: AsyncUnitOfWorkTransaction[TRepositories, TAsyncMessageStore],
         **transient_dependencies: Any,
     ) -> Any:
-        """
-        Notify listener of that event registered with `messagebus.add_listener`.
-        Return the first event from the command.
-
-        :param message: The message to handle, should be a command.
-        """
         dependencies = {k: uow.add_listener(v()) for k, v in self.dependencies.items()}
         if transient_dependencies:
             [uow.add_listener(d) for d in transient_dependencies.values()]
@@ -152,6 +146,9 @@ class AsyncMessageBus(Generic[TRepositories]):
             if not isinstance(message, GenericCommand | GenericEvent):
                 raise RuntimeError(f"{message} was not an Event or Command")
             msg_type = type(message)
+
+            uow.metrics_store.inc_messages_processed_total(message.metadata)
+
             if msg_type in self.commands_registry:
                 cmdret = await self.commands_registry[msg_type](  # type: ignore
                     cast(GenericCommand[Any], message), uow, dependencies
@@ -166,6 +163,21 @@ class AsyncMessageBus(Generic[TRepositories]):
             await uow.messagestore.add(message)
             idx += 1
         return ret
+
+    async def handle(
+        self,
+        command: GenericCommand[Any],
+        uow: AsyncUnitOfWorkTransaction[TRepositories, TAsyncMessageStore],
+        **transient_dependencies: Any,
+    ) -> Any:
+        """
+        Notify listener of that event registered with `messagebus.add_listener`.
+        Return the first event from the command.
+
+        :param message: The message to handle, should be a command.
+        """
+        with uow.metrics_store.command_processing_timer(command):
+            return await self._handle(command, uow, **transient_dependencies)
 
     def scan(
         self,

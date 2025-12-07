@@ -8,6 +8,10 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from messagebus.domain.model import Message
+from messagebus.infrastructure.observability.metrics import (
+    AbstractMetricsStore,
+    MetricsStore,
+)
 
 if TYPE_CHECKING:
     from messagebus.service._async.dependency import AsyncDependency  # coverage: ignore
@@ -55,6 +59,10 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncMessageStore]):
     def messagestore(self) -> AsyncAbstractMessageStoreRepository:
         return self.uow.messagestore
 
+    @property
+    def metrics_store(self) -> AbstractMetricsStore:
+        return self.uow.metrics_store
+
     def add_listener(self, listener: AsyncDependency) -> AsyncDependency:
         self._hooks.append(listener)
         return listener
@@ -97,6 +105,7 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncMessageStore]):
         """Entering the transaction."""
         if self.status != TransactionStatus.running:
             raise TransactionError("Invalid transaction status.")
+        self.uow.metrics_store.inc_beginned_transaction_count()
         return self
 
     async def __aexit__(
@@ -107,7 +116,9 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncMessageStore]):
     ) -> None:
         """Rollback in case of exception."""
         if exc:
+            self.uow.metrics_store.inc_transaction_failed()
             await self.rollback()
+            self.uow.metrics_store.inc_transaction_closed_count(self.status)
             return
 
         if self.status != TransactionStatus.streaming:
@@ -122,6 +133,8 @@ class AsyncUnitOfWorkTransaction(Generic[TRepositories, TAsyncMessageStore]):
             )
         if self.status == TransactionStatus.committed:
             await self.uow.messagestore.publish_eventstream()
+
+        self.uow.metrics_store.inc_transaction_closed_count(self.status)
         self.status = TransactionStatus.closed
 
     async def close(self) -> None:
@@ -146,6 +159,7 @@ class AsyncAbstractUnitOfWork(abc.ABC, Generic[TRepositories, TAsyncMessageStore
     has to be declared has attributes.
     """
 
+    metrics_store: AbstractMetricsStore = MetricsStore()
     messagestore: TAsyncMessageStore = AsyncSinkholeMessageStoreRepository()  # type: ignore
 
     def collect_new_events(self) -> Iterator[Message[Any]]:

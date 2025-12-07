@@ -4,12 +4,11 @@ from tests._async.conftest import (
     AsyncDummyMessageStore,
     AsyncDummyUnitOfWorkWithEvents,
     AsyncEventstreamTransport,
-    DummyCommand,
-    DummyEvent,
     DummyModel,
     MyMetadata,
     Repositories,
 )
+from tests.conftest import DummyCommand, DummyEvent
 
 
 async def listen_command(

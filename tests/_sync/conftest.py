@@ -1,5 +1,13 @@
 import enum
-from collections.abc import Iterator, Mapping, MutableMapping, MutableSequence
+import time
+from collections.abc import (
+    Iterator,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+)
+from contextlib import contextmanager
+from dataclasses import asdict, dataclass, field
 from types import EllipsisType
 from typing import (
     Any,
@@ -12,11 +20,12 @@ from result import Err, Ok, Result
 
 from messagebus.domain.model import (
     GenericCommand,
-    GenericEvent,
     GenericModel,
     Message,
     Metadata,
+    TransactionStatus,
 )
+from messagebus.infrastructure.observability.metrics import AbstractMetricsStore
 from messagebus.service._sync.dependency import SyncDependency
 from messagebus.service._sync.eventstream import (
     SyncAbstractEventstreamTransport,
@@ -31,10 +40,47 @@ from messagebus.service._sync.unit_of_work import (
     SyncAbstractUnitOfWork,
     SyncUnitOfWorkTransaction,
 )
+from tests.conftest import MyMetadata
 
 
-class MyMetadata(Metadata):
-    custom_field: str
+@dataclass
+class DummyMetricsStore(AbstractMetricsStore):
+    beginned_transaction_count: int = 0
+    transaction_failed_count: int = 0
+    transaction_commit_count: int = 0
+    transaction_rollback_count: int = 0
+    processed_count: dict[tuple[str, int], int] = field(default_factory=dict)
+    processing_time: float = 0
+
+    def inc_beginned_transaction_count(self):
+        self.beginned_transaction_count += 1
+
+    def inc_transaction_failed(self):
+        self.transaction_failed_count += 1
+
+    def inc_transaction_closed_count(self, status: TransactionStatus):
+        match status:
+            case TransactionStatus.committed:
+                self.transaction_commit_count += 1
+            case TransactionStatus.rolledback:
+                self.transaction_rollback_count += 1
+            case _:
+                assert True, f"Should nevver report {status}"
+
+    def inc_messages_processed_total(self, msg_metadata: Metadata):
+        if (msg_metadata.name, msg_metadata.schema_version) in self.processed_count:
+            self.processed_count[(msg_metadata.name, msg_metadata.schema_version)] += 1
+        else:
+            self.processed_count[(msg_metadata.name, msg_metadata.schema_version)] = 1
+
+    def dump(self) -> dict[str, int]:
+        return asdict(self)
+
+    @contextmanager
+    def command_processing_timer(self, command: GenericCommand[Any]) -> Iterator[None]:
+        start_time = time.time()
+        yield
+        self.processing_time = time.time() - start_time
 
 
 class DummyError(enum.Enum):
@@ -122,6 +168,7 @@ class SyncDummyUnitOfWork(SyncAbstractUnitOfWork[Repositories, SyncDummyMessageS
     def __init__(self) -> None:
         super().__init__()
         self.status = "init"
+        self.metrics_store = DummyMetricsStore()
         self.foos = SyncFooRepository()
         self.bars = SyncDummyRepository()
 
@@ -139,30 +186,11 @@ class SyncDummyUnitOfWorkWithEvents(
         self.foos = SyncFooRepository()
         self.bars = SyncDummyRepository()
         self.messagestore = SyncDummyMessageStore(publisher=publisher)
+        self.metrics_store = DummyMetricsStore()
 
     def commit(self) -> None: ...
 
     def rollback(self) -> None: ...
-
-
-class DummyCommand(GenericCommand[MyMetadata]):
-    id: str = Field(...)
-    metadata: MyMetadata = MyMetadata(
-        name="dummy", schema_version=1, custom_field="foo"
-    )
-
-
-class AnotherDummyCommand(GenericCommand[MyMetadata]):
-    id: str = Field(...)
-    metadata: MyMetadata = MyMetadata(name="dummy2", schema_version=1, custom_field="f")
-
-
-class DummyEvent(GenericEvent[MyMetadata]):
-    id: str = Field(...)
-    increment: int = Field(...)
-    metadata: MyMetadata = MyMetadata(
-        name="dummied", schema_version=1, published=True, custom_field="foo"
-    )
 
 
 @pytest.fixture
@@ -187,6 +215,11 @@ def tuow(
     with uow as tuow:
         yield tuow
         tuow.rollback()
+
+
+@pytest.fixture
+def metrics(uow: SyncDummyUnitOfWork) -> AbstractMetricsStore:
+    return uow.metrics_store
 
 
 @pytest.fixture
@@ -229,13 +262,3 @@ def notifier():
 @pytest.fixture
 def bus(notifier: type[Notifier]) -> SyncMessageBus[Repositories]:
     return SyncMessageBus(notifier=notifier)
-
-
-@pytest.fixture
-def dummy_command() -> DummyCommand:
-    return DummyCommand(id="dummy_cmd")
-
-
-@pytest.fixture
-def dummy_event() -> DummyEvent:
-    return DummyEvent(id="dummy_evt", increment=1)

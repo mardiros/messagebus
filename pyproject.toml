@@ -15,7 +15,12 @@ classifiers = [
     "Typing :: Typed",
 ]
 
-dependencies = ["lastuuid>=0.1.1", "pydantic>=2.5.0,<3", "venusian>=3.0.0,<4"]
+dependencies = [
+    "lastuuid>=0.1.1",
+    "prometheus-client>=0.17.0,<1",
+    "pydantic>=2.5.0,<3",
+    "venusian>=3.0.0,<4",
+]
 
 [project.urls]
 Homepage = "https://github.com/mardiros/messagebus"

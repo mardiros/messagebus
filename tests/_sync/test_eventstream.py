@@ -6,7 +6,7 @@ from messagebus.service._sync.eventstream import (
     SyncEventstreamPublisher,
 )
 from messagebus.service.eventstream import MessageSerializer
-from tests._sync.conftest import DummyCommand, DummyEvent
+from tests.conftest import DummyCommand, DummyEvent
 
 
 class SyncDummyEventstreamTransport(SyncAbstractEventstreamTransport):

@@ -3,7 +3,7 @@ from typing import Any, ClassVar
 
 from prometheus_client import REGISTRY, CollectorRegistry, Counter, Gauge
 
-from messagebus.domain.model import TransactionStatus
+from messagebus.domain.model import Metadata, TransactionStatus
 
 
 class AbstractMetricsStore(abc.ABC):
@@ -15,6 +15,9 @@ class AbstractMetricsStore(abc.ABC):
 
     @abc.abstractmethod
     def inc_transaction_closed_count(self, status: TransactionStatus) -> None: ...
+
+    @abc.abstractmethod
+    def inc_messages_processed_total(self, msg_metadata: Metadata) -> None: ...
 
 
 class Singleton(abc.ABCMeta):
@@ -65,6 +68,13 @@ class MetricsStore(AbstractMetricsStore, metaclass=Singleton):
             registry=registry,
         )
 
+        self.messages_processed_total = Counter(
+            name="messagebus_messages_processed_total",
+            documentation="Total number of messages that has been handled handled by the bus.",
+            labelnames=["name", "version"],
+            registry=registry,
+        )
+
     def inc_beginned_transaction_count(self) -> None:
         self.transactions_started_total.inc()
         self.transactions_in_progress.inc()
@@ -75,3 +85,8 @@ class MetricsStore(AbstractMetricsStore, metaclass=Singleton):
     def inc_transaction_closed_count(self, status: TransactionStatus) -> None:
         self.transactions_closed_total.labels(status=status.name).inc()
         self.transactions_in_progress.dec()
+
+    def inc_messages_processed_total(self, msg_metadata: Metadata) -> None:
+        self.messages_processed_total.labels(
+            name=msg_metadata.name, version=msg_metadata.schema_version
+        ).inc()

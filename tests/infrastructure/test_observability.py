@@ -3,7 +3,7 @@ from collections.abc import Iterator
 import pytest
 from prometheus_client import CollectorRegistry
 
-from messagebus import TransactionStatus
+from messagebus import Metadata, TransactionStatus
 from messagebus.infrastructure.observability.metrics import MetricsStore, Singleton
 
 
@@ -89,6 +89,19 @@ def test_prometheus_transaction_rollback(
     assert (
         registry.get_sample_value(
             "messagebus_transactions_closed_total", labels={"status": "rolledback"}
+        )
+        == 1
+    )
+
+
+def test_prometheusinc_inc_messages_processed_total(
+    metrics: MetricsStore, registry: CollectorRegistry
+):
+    metrics.inc_messages_processed_total(Metadata(name="dummy", schema_version=42))
+    assert (
+        registry.get_sample_value(
+            "messagebus_messages_processed_total",
+            labels={"name": "dummy", "version": "42"},
         )
         == 1
     )

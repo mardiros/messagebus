@@ -1,6 +1,6 @@
 import enum
 from collections.abc import Iterator, Mapping, MutableMapping, MutableSequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from types import EllipsisType
 from typing import (
     Any,
@@ -42,6 +42,7 @@ class DummyMetricsStore(AbstractMetricsStore):
     transaction_failed_count: int = 0
     transaction_commit_count: int = 0
     transaction_rollback_count: int = 0
+    processed_count: dict[tuple[str, int], int] = field(default_factory=dict)
 
     def inc_beginned_transaction_count(self):
         self.beginned_transaction_count += 1
@@ -57,6 +58,12 @@ class DummyMetricsStore(AbstractMetricsStore):
                 self.transaction_rollback_count += 1
             case _:
                 assert True, f"Should nevver report {status}"
+
+    def inc_messages_processed_total(self, msg_metadata: Metadata):
+        if (msg_metadata.name, msg_metadata.schema_version) in self.processed_count:
+            self.processed_count[(msg_metadata.name, msg_metadata.schema_version)] += 1
+        else:
+            self.processed_count[(msg_metadata.name, msg_metadata.schema_version)] = 1
 
     def dump(self) -> dict[str, int]:
         return asdict(self)

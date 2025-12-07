@@ -73,6 +73,7 @@ async def test_transaction_rollback_on_error(
         "transaction_commit_count": 0,
         "transaction_failed_count": 1,
         "transaction_rollback_count": 1,
+        "processed_count": {},
     }
 
 
@@ -91,6 +92,7 @@ async def test_transaction_rollback_explicit_commit(
         "transaction_commit_count": 0,
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
+        "processed_count": {},
     }
 
 
@@ -107,6 +109,7 @@ async def test_transaction_invalid_state(
         "transaction_commit_count": 0,
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
+        "processed_count": {},
     }
 
 
@@ -125,6 +128,7 @@ async def test_transaction_invalid_usage(
         "transaction_commit_count": 0,
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
+        "processed_count": {},
     }
 
 
@@ -142,6 +146,7 @@ async def test_transaction_commit_after_rollback(
         "transaction_commit_count": 0,
         "transaction_failed_count": 1,
         "transaction_rollback_count": 1,
+        "processed_count": {},
     }
 
 
@@ -159,6 +164,7 @@ async def test_transaction_commit_twice(
         "transaction_commit_count": 0,
         "transaction_failed_count": 1,
         "transaction_rollback_count": 1,
+        "processed_count": {},
     }
 
 
@@ -176,6 +182,7 @@ async def test_detach_transaction(
         "transaction_commit_count": 1,
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
+        "processed_count": {},
     }
 
     async with uow as tuow:
@@ -187,6 +194,7 @@ async def test_detach_transaction(
         "transaction_commit_count": 1,
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
+        "processed_count": {},
     }
 
     try:
@@ -200,4 +208,5 @@ async def test_detach_transaction(
         "transaction_commit_count": 1,
         "transaction_failed_count": 0,
         "transaction_rollback_count": 1,
+        "processed_count": {},
     }

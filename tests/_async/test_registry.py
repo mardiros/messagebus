@@ -8,6 +8,7 @@ from tests._async.conftest import (
     AsyncUnitOfWorkTransaction,
     DummyCommand,
     DummyEvent,
+    DummyMetricsStore,
     DummyModel,
     Notifier,
     Repositories,
@@ -41,6 +42,7 @@ async def listen_event(
 async def test_messagebus(
     bus: AsyncMessageBus[Repositories],
     tuow: AsyncUnitOfWorkTransaction[Repositories, AsyncDummyMessageStore],
+    metrics: DummyMetricsStore,
 ):
     """
     Test that the message bus is firing command and event.
@@ -62,6 +64,10 @@ async def test_messagebus(
     foo = await bus.handle(DummyCommand(id="foo2"), tuow)
     assert foo is None, "The command cannot raise event before attach_listener"
 
+    assert metrics.processed_count == {
+        ("dummy", 1): 1,
+    }
+
     bus.add_listener(DummyCommand, listen_command)
     bus.add_listener(DummyEvent, listen_event)
 
@@ -77,6 +83,11 @@ async def test_messagebus(
     assert foo.counter == 0, (
         "The command should raise an event that is not handled anymore "
     )
+
+    assert metrics.processed_count == {
+        ("dummied", 1): 2,
+        ("dummy", 1): 3,
+    }
 
 
 async def test_messagebus_handle_only_message(

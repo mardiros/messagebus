@@ -150,6 +150,9 @@ class SyncMessageBus(Generic[TRepositories]):
             if not isinstance(message, GenericCommand | GenericEvent):
                 raise RuntimeError(f"{message} was not an Event or Command")
             msg_type = type(message)
+
+            uow.metrics_store.inc_messages_processed_total(message.metadata)
+
             if msg_type in self.commands_registry:
                 cmdret = self.commands_registry[msg_type](  # type: ignore
                     cast(GenericCommand[Any], message), uow, dependencies

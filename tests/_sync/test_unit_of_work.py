@@ -71,6 +71,7 @@ def test_transaction_rollback_on_error(
         "transaction_commit_count": 0,
         "transaction_failed_count": 1,
         "transaction_rollback_count": 1,
+        "processed_count": {},
     }
 
 
@@ -89,6 +90,7 @@ def test_transaction_rollback_explicit_commit(
         "transaction_commit_count": 0,
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
+        "processed_count": {},
     }
 
 
@@ -105,6 +107,7 @@ def test_transaction_invalid_state(
         "transaction_commit_count": 0,
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
+        "processed_count": {},
     }
 
 
@@ -123,6 +126,7 @@ def test_transaction_invalid_usage(
         "transaction_commit_count": 0,
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
+        "processed_count": {},
     }
 
 
@@ -140,6 +144,7 @@ def test_transaction_commit_after_rollback(
         "transaction_commit_count": 0,
         "transaction_failed_count": 1,
         "transaction_rollback_count": 1,
+        "processed_count": {},
     }
 
 
@@ -155,6 +160,7 @@ def test_transaction_commit_twice(uow: SyncDummyUnitOfWork, metrics: DummyMetric
         "transaction_commit_count": 0,
         "transaction_failed_count": 1,
         "transaction_rollback_count": 1,
+        "processed_count": {},
     }
 
 
@@ -170,6 +176,7 @@ def test_detach_transaction(uow: SyncDummyUnitOfWork, metrics: DummyMetricsStore
         "transaction_commit_count": 1,
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
+        "processed_count": {},
     }
 
     with uow as tuow:
@@ -181,6 +188,7 @@ def test_detach_transaction(uow: SyncDummyUnitOfWork, metrics: DummyMetricsStore
         "transaction_commit_count": 1,
         "transaction_failed_count": 0,
         "transaction_rollback_count": 0,
+        "processed_count": {},
     }
 
     try:
@@ -194,4 +202,5 @@ def test_detach_transaction(uow: SyncDummyUnitOfWork, metrics: DummyMetricsStore
         "transaction_commit_count": 1,
         "transaction_failed_count": 0,
         "transaction_rollback_count": 1,
+        "processed_count": {},
     }

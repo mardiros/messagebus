@@ -1,7 +1,12 @@
+0.15.1  - Released on 2025-12-07
+--------------------------------
+* Makes prometheus-client optional.
+* Imports changed (breaking change).
+
 0.15.0  - Released on 2025-12-07
 --------------------------------
-* The message store created_at is not timezone aware, and in UTC. (breaking change)
-* Typing API updated to get a TUnitOfWork instead of all of its parameters in the transaction type. (breaking change) 
+* The message store created_at is not timezone aware, and in UTC (breaking change).
+* Typing API updated to get a TUnitOfWork instead of all of its parameters in the transaction type (breaking change).
 * The metrics store class can be specified, it is a generic now.
 
 0.14.0  - Released on 2025-12-07
@@ -45,7 +50,7 @@
 
 0.8.1  - Released on 2025-02-01
 -------------------------------
-* Fix CI 
+* Fix CI
 
 0.8.0  - Released on 2025-02-01
 -------------------------------

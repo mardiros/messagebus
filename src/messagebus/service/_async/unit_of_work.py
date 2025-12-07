@@ -10,9 +10,9 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar
 from typing_extensions import Self
 
 from messagebus.domain.model import Message
-from messagebus.infrastructure.observability.metrics import (
+from messagebus.ports.observability import (
     AbstractMetricsStore,
-    MetricsStore,
+    SinkholeMetricsStore,
     TMetricsStore,
 )
 
@@ -46,7 +46,7 @@ class AsyncAbstractUnitOfWork(
     has to be declared has attributes.
     """
 
-    metrics_store: TMetricsStore = MetricsStore()  # type: ignore
+    metrics_store: TMetricsStore = SinkholeMetricsStore()  # type: ignore
     messagestore: TAsyncMessageStore = AsyncSinkholeMessageStoreRepository()  # type: ignore
     __transaction: AsyncUnitOfWorkTransaction[Self]
 

@@ -5,7 +5,7 @@ import pytest
 from prometheus_client import CollectorRegistry
 
 from messagebus import Metadata, TransactionStatus
-from messagebus.infrastructure.observability.metrics import MetricsStore, Singleton
+from messagebus.adapters.prometheus.metrics_store import MetricsStore, Singleton
 from tests.conftest import DummyCommand
 
 

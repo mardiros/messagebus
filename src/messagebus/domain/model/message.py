@@ -7,18 +7,18 @@ Message base classes.
 
 from datetime import datetime, timezone
 from typing import Any, Generic, TypeVar
-from uuid import UUID
 
 from lastuuid import uuid7
 from pydantic import BaseModel, Field
 
+from .ids import MessageId
 from .metadata import Metadata, TMetadata
 
 
 class Message(BaseModel, Generic[TMetadata]):
     """Base class for messaging."""
 
-    message_id: UUID = Field(default_factory=uuid7)
+    message_id: MessageId = Field(default_factory=lambda: MessageId(uuid7()))
     """Unique identifier of the message."""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     """

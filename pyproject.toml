@@ -1,10 +1,10 @@
 [project]
-authors = [{ name = "Guillaume Gauvrit", email = "guillaume@gauvr.it" }]
-description = "Lightweight message bus library designed for event-driven architectures."
 name = "messagebus"
 version = "0.15.1"
-requires-python = ">=3.10"
+description = "Lightweight message bus library designed for event-driven architectures."
+authors = [{ name = "Guillaume Gauvrit", email = "guillaume@gauvr.it" }]
 license = { text = "MIT" }
+readme = "README.rst"
 keywords = ["event-driven", "microservice", "CQRS"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -14,6 +14,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
+requires-python = ">=3.10"
 
 dependencies = [
     "lastuuid>=0.1.1",

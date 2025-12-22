@@ -1,3 +1,7 @@
+0.15.2  - Released on 2025-12-22
+--------------------------------
+* Use NewType for message id. 
+
 0.15.1  - Released on 2025-12-07
 --------------------------------
 * Makes prometheus-client optional.

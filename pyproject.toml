@@ -1,6 +1,6 @@
 [project]
 name = "messagebus"
-version = "0.15.1"
+version = "0.15.2"
 description = "Lightweight message bus library designed for event-driven architectures."
 authors = [{ name = "Guillaume Gauvrit", email = "guillaume@gauvr.it" }]
 license = { text = "MIT" }

@@ -3,14 +3,13 @@ Propagate commands and events to every registered handles.
 
 """
 
-import importlib
 import inspect
 import logging
 from collections import defaultdict
 from collections.abc import Mapping
 from typing import Any, Generic, cast
 
-import venusian
+import tamahagane as th
 
 from messagebus.domain.model import GenericCommand, GenericEvent, Message
 from messagebus.domain.model.message import TMessage
@@ -23,7 +22,13 @@ from messagebus.service._async.dependency import (
 from messagebus.service._async.unit_of_work import AsyncUnitOfWorkTransaction, TAsyncUow
 
 log = logging.getLogger(__name__)
-VENUSIAN_CATEGORY = "messagebus"
+
+
+class Registries:
+    async_messagebus: "AsyncMessageBus[Any]"
+
+    def __init__(self, async_messagebus: "AsyncMessageBus[Any]") -> None:
+        self.async_messagebus = async_messagebus
 
 
 class ConfigurationError(RuntimeError):
@@ -40,18 +45,12 @@ def async_listen(
     The command handler result is returned by the handle call of the message bus.
     """
 
-    def callback(
-        scanner: venusian.Scanner,
-        name: str,
-        ob: AsyncMessageHandler[TMessage, TAsyncUow, P],
-    ) -> None:
-        if not hasattr(scanner, VENUSIAN_CATEGORY):
-            return  # coverage: ignore
-        argsspec = inspect.getfullargspec(ob)
+    def callback(scanner: th.Scanner[Registries]) -> None:
+        argsspec = inspect.getfullargspec(wrapped)
         msg_type = argsspec.annotations[argsspec.args[0]]
-        scanner.messagebus.add_listener(msg_type, wrapped)  # type: ignore
+        scanner.registry.async_messagebus.add_listener(msg_type, wrapped)
 
-    venusian.attach(wrapped, callback, category=VENUSIAN_CATEGORY)  # type: ignore
+    th.attach(callback, category="async_messagebus")
     return wrapped
 
 
@@ -174,22 +173,16 @@ class AsyncMessageBus(Generic[TAsyncUow]):
         with uow.metrics_store.command_processing_timer(command):
             return await self._handle(command, uow, **transient_dependencies)
 
-    def scan(
-        self,
-        *mods: str,
-    ) -> None:
+    def scan(self, *mods: str, stack_depth: int = 4) -> None:
         """
         Scan the module (or modules) containing service handlers.
 
         when a message is handled by the bus, the bus propagate the message
         to hook functions, called :term:`Service Handler` that receive the message,
         and a :term:`Unit Of Work` to process it has a business transaction.
+
+        :param mods: a list of module names to import.
         """
-        scanner = venusian.Scanner(messagebus=self)
-        for modname in mods:
-            if modname.startswith("."):
-                raise ValueError(
-                    f"scan error: relative package unsupported for {modname}"
-                )
-            mod = importlib.import_module(modname)
-            scanner.scan(mod, categories=[VENUSIAN_CATEGORY])  # type: ignore
+        registry = Registries(self)
+        scanner = th.Scanner(registry)
+        scanner.scan(*mods, stack_depth=stack_depth)

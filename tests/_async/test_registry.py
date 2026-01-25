@@ -45,7 +45,7 @@ async def test_messagebus(
     """
     Test that the message bus is firing command and event.
 
-    Because we use venusian, the bus only works the event as been
+    Because we use tamahagane, the bus only works the event as been
     attached.
     """
     DummyModel.counter = 0
@@ -169,17 +169,22 @@ def test_scan(bus: AsyncMessageBus[Any]):
 
     assert DummyEvent in bus.events_registry
     assert len(bus.events_registry[DummyEvent]) == 2
-    assert bus.events_registry[DummyEvent][0].callback == dummy.handler_evt1
-    assert bus.events_registry[DummyEvent][1].callback == dummy.handler_evt2
+    assert (
+        bus.events_registry[DummyEvent][0].callback == dummy.handler_evt1
+        or bus.events_registry[DummyEvent][0].callback == dummy.handler_evt2
+    )
+    assert (
+        bus.events_registry[DummyEvent][1].callback == dummy.handler_evt1
+        or bus.events_registry[DummyEvent][1].callback == dummy.handler_evt2
+    )
+    assert (
+        bus.events_registry[DummyEvent][0].callback
+        != bus.events_registry[DummyEvent][1].callback
+    )
 
 
 def test_scan_relative(bus: AsyncMessageBus[Any]):
-    with pytest.raises(ValueError) as ctx:
-        bus.scan("._async.handlers")
-    assert (
-        str(ctx.value)
-        == "scan error: relative package unsupported for ._async.handlers"
-    )
+    bus.scan(".handlers")
 
 
 async def listen_command_with_dependency(

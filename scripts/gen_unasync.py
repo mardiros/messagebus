@@ -13,6 +13,7 @@ unasync.unasync_files(
                 "TAsyncUow": "TSyncUow",
                 "TAsyncMessageStore": "TSyncMessageStore",
                 "async_listen": "sync_listen",
+                "async_messagebus": "sync_messagebus",
             },
         ),
     ],

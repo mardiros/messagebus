@@ -45,12 +45,12 @@ def async_listen(
     The command handler result is returned by the handle call of the message bus.
     """
 
-    def callback(scanner: th.Scanner[Registries]) -> None:
+    def callback(registry: Registries) -> None:
         argsspec = inspect.getfullargspec(wrapped)
         msg_type = argsspec.annotations[argsspec.args[0]]
-        scanner.registry.async_messagebus.add_listener(msg_type, wrapped)
+        registry.async_messagebus.add_listener(msg_type, wrapped)
 
-    th.attach(callback, category="async_messagebus")
+    th.attach(wrapped, callback, category="async_messagebus")
     return wrapped
 
 
@@ -173,7 +173,7 @@ class AsyncMessageBus(Generic[TAsyncUow]):
         with uow.metrics_store.command_processing_timer(command):
             return await self._handle(command, uow, **transient_dependencies)
 
-    def scan(self, *mods: str, stack_depth: int = 4) -> None:
+    def scan(self, *mods: str, stack_depth: int = 1) -> None:
         """
         Scan the module (or modules) containing service handlers.
 

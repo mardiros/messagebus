@@ -2,7 +2,7 @@ package := 'messagebus'
 default_test_suite := 'tests'
 
 install:
-    uv sync --group dev --group doc --frozen
+    uv sync --group dev --group docs --frozen
 
 update:
     uv sync --group dev --group docs

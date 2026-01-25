@@ -19,7 +19,7 @@ requires-python = ">=3.10"
 dependencies = [
     "lastuuid>=0.1.1",
     "pydantic>=2.5.0,<3",
-    "venusian>=3.0.0,<4",
+    "tamahagane>=0.2,<0.3",
 ]
 
 [project.urls]
@@ -93,27 +93,10 @@ disallow_any_generics = true
 disallow_untyped_defs = true
 module = "messagebus.*"
 
-[[tool.mypy.overrides]]
-ignore_missing_imports = true
-module = ["venusian"]
-
-[tool.isort]
-profile = "black"
-
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-filterwarnings = [
-    "error",
-    # standard lib
-    'ignore:.*datetime.datetime.utcnow\(\) is deprecated and scheduled for removal',
-    # setuptools
-    'ignore:.*pkg_resources is deprecated as an API.*:DeprecationWarning',
-    'ignore:.*Deprecated call to `pkg_resources.declare_namespace:DeprecationWarning',
-    # venusian
-    'ignore:.*find_module\(\) is deprecated.*:DeprecationWarning',
-    'ignore:.*FileFinder.find_loader\(\) is deprecated.*:DeprecationWarning',
-]
+filterwarnings = ["error"]
 
 [tool.coverage.report]
 exclude_lines = ["# coverage: ignore"]

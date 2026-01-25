@@ -2,7 +2,14 @@ package := 'messagebus'
 default_test_suite := 'tests'
 
 install:
-    uv sync --group dev --group doc
+    uv sync --group dev --group doc --frozen
+
+update:
+    uv sync --group dev --group docs
+
+upgrade:
+    uv sync --group dev --group docs --upgrade
+
 
 doc:
     cd docs && uv run make html

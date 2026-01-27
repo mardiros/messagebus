@@ -1,3 +1,7 @@
+0.16.1  - Released on 2026-01-28
+--------------------------------
+* Upgrade tamahagane. 
+
 0.16.0  - Released on 2026-01-25
 --------------------------------
 * Replace venusian by tamahagane to populate handlers. 

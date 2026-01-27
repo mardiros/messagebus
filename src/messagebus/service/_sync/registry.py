@@ -171,7 +171,7 @@ class SyncMessageBus(Generic[TSyncUow]):
         with uow.metrics_store.command_processing_timer(command):
             return self._handle(command, uow, **transient_dependencies)
 
-    def scan(self, *mods: str, stack_depth: int = 3) -> None:
+    def scan(self, *mods: str, stack_depth: int = 1) -> None:
         """
         Scan the module (or modules) containing service handlers.
 
@@ -183,4 +183,4 @@ class SyncMessageBus(Generic[TSyncUow]):
         """
         registry = Registries(self)
         scanner = th.Scanner(registry)
-        scanner.scan(*mods, stack_depth=stack_depth)
+        scanner.scan(*mods, stack_depth=stack_depth + 2)

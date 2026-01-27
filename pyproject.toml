@@ -19,7 +19,7 @@ requires-python = ">=3.10"
 dependencies = [
     "lastuuid>=0.1.1",
     "pydantic>=2.5.0,<3",
-    "tamahagane>=0.4,<0.5",
+    "tamahagane>=0.4.3,<0.5",
 ]
 
 [project.urls]

@@ -185,4 +185,4 @@ class AsyncMessageBus(Generic[TAsyncUow]):
         """
         registry = Registries(self)
         scanner = th.Scanner(registry)
-        scanner.scan(*mods, stack_depth=stack_depth)
+        scanner.scan(*mods, stack_depth=stack_depth + 2)

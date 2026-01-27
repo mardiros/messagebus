@@ -484,7 +484,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.5.0,<3" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=7.0.0" },
     { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'", specifier = ">=1.12.0,<2" },
-    { name = "tamahagane", specifier = ">=0.4,<0.5" },
+    { name = "tamahagane", specifier = ">=0.4.3,<0.5" },
 ]
 provides-extras = ["docs", "prometheus"]
 
@@ -897,11 +897,11 @@ wheels = [
 
 [[package]]
 name = "tamahagane"
-version = "0.4.0"
+version = "0.4.3"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a5/4f/8add1e78be795fc03c77637ae503d0413efc278d0e1b3416db0870ac672d/tamahagane-0.4.0.tar.gz", hash = "sha256:e592108072aa3a1c8a60db48678d47398d535a583e20558ed2bcc116b9a00a9e", size = 5342, upload-time = "2026-01-25T19:27:47.499Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e0/6a/cc6d81ddb0378add194b6047feaad917be53bc71237de60cd3ad3277052b/tamahagane-0.4.3.tar.gz", hash = "sha256:dce82d77564f24e47c9717ff136247508b11c46c1679d2e9e46ee3197ba7273b", size = 6369, upload-time = "2026-01-27T22:57:31.232Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/43/eb/664c0a2ae163d5016b82a9e89341707fa547bee99214ea01f474638b7692/tamahagane-0.4.0-py3-none-any.whl", hash = "sha256:aee858604190c2312afaaa3e96a257a1a38833f7aa9918abd687aafb925a8274", size = 6303, upload-time = "2026-01-25T19:27:46.157Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/2b/fb284c2a11050c2a31040c7d8535496ccccc6c90dfb6483f84fc6506ca7b/tamahagane-0.4.3-py3-none-any.whl", hash = "sha256:a8b3ff8b61cc304bd78c1d16461c64bb678b629198a99244609b6a0c8016779b", size = 7360, upload-time = "2026-01-27T22:57:29.532Z" },
 ]
 
 [[package]]

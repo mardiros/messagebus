@@ -469,7 +469,7 @@ dev = [
     { name = "result" },
     { name = "unasync" },
 ]
-doc = [
+docs = [
     { name = "esbonio" },
     { name = "furo" },
     { name = "sphinx" },
@@ -484,7 +484,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.5.0,<3" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=7.0.0" },
     { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'", specifier = ">=1.12.0,<2" },
-    { name = "tamahagane", specifier = ">=0.2,<0.3" },
+    { name = "tamahagane", specifier = ">=0.4.3,<0.5" },
 ]
 provides-extras = ["docs", "prometheus"]
 
@@ -498,7 +498,7 @@ dev = [
     { name = "result", specifier = ">=0.17.0,<0.18.0" },
     { name = "unasync", specifier = ">=0.6.0,<0.7.0" },
 ]
-doc = [
+docs = [
     { name = "esbonio", specifier = ">=0.16.1" },
     { name = "furo", specifier = ">=2024.8.6" },
     { name = "sphinx", specifier = ">=7.0.0" },
@@ -897,11 +897,11 @@ wheels = [
 
 [[package]]
 name = "tamahagane"
-version = "0.2.0"
+version = "0.4.3"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a3/99/08e554ba4190393dd70eb7e8f0829468e44fc904ab9a8f37e4b8abd88a97/tamahagane-0.2.0.tar.gz", hash = "sha256:82cfdc72864c64224e6614cd2b488d0c8a811adc8e4650b610c936c52f66c1bc", size = 5058, upload-time = "2026-01-25T13:34:59.986Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e0/6a/cc6d81ddb0378add194b6047feaad917be53bc71237de60cd3ad3277052b/tamahagane-0.4.3.tar.gz", hash = "sha256:dce82d77564f24e47c9717ff136247508b11c46c1679d2e9e46ee3197ba7273b", size = 6369, upload-time = "2026-01-27T22:57:31.232Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/d7/ea584b3c8bb19f1332e5cc7aff037eabcb628dceb47a237c4ec1ea5fbb69/tamahagane-0.2.0-py3-none-any.whl", hash = "sha256:3b876c9cb9e8125576bb5615fd4038d5e218257794f283c045fe826fb740db35", size = 6019, upload-time = "2026-01-25T13:34:58.408Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/2b/fb284c2a11050c2a31040c7d8535496ccccc6c90dfb6483f84fc6506ca7b/tamahagane-0.4.3-py3-none-any.whl", hash = "sha256:a8b3ff8b61cc304bd78c1d16461c64bb678b629198a99244609b6a0c8016779b", size = 7360, upload-time = "2026-01-27T22:57:29.532Z" },
 ]
 
 [[package]]

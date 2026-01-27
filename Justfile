@@ -2,7 +2,7 @@ package := 'messagebus'
 default_test_suite := 'tests'
 
 install:
-    uv sync --group dev --group doc --frozen
+    uv sync --group dev --group docs --frozen
 
 update:
     uv sync --group dev --group docs
@@ -61,7 +61,7 @@ changelog:
     $EDITOR CHANGELOG.rst
 
 publish:
-    git commit -am "Release $(uv run scripts/get_version.py)"
+    git commit -am "Release $(uv version --short)"
     git push
-    git tag "v$(uv run scripts/get_version.py)"
-    git push origin "v$(uv run scripts/get_version.py)"
+    git tag "v$(uv version --short)"
+    git push origin "v$(uv version --short)"

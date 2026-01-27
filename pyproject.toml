@@ -19,7 +19,7 @@ requires-python = ">=3.10"
 dependencies = [
     "lastuuid>=0.1.1",
     "pydantic>=2.5.0,<3",
-    "tamahagane>=0.2,<0.3",
+    "tamahagane>=0.4.3,<0.5",
 ]
 
 [project.urls]
@@ -49,7 +49,7 @@ dev = [
     "result>=0.17.0,<0.18.0",
     "unasync>=0.6.0,<0.7.0",
 ]
-doc = [
+docs = [
     "esbonio>=0.16.1",
     "sphinx>=7.0.0",
     "sphinx-autodoc-typehints>=1.12.0,<2",

@@ -3,7 +3,6 @@ from datetime import datetime
 import pytest
 
 from messagebus import Event, Field, Message, Metadata, Model
-from messagebus.typing import TMessage
 
 
 class Foo(Model):
@@ -29,13 +28,17 @@ class BigMessage(Model):
     eta: datetime | None = Field(default=None)
 
 
-class BigMessageCreated(Model):
+class BigMessageCreated(Event):
     name: str
     eta: datetime | None = Field(default=None)
     metadata: Metadata = Metadata(name="big_message_created", schema_version=1)
 
 
 def attach_events(model: Model, messages: list[Message[Metadata]]) -> Model:
+    """
+    To fix: the constructor of Model subclass refused subinstance of message.
+    pydantic raises an error.
+    """
     for evt in messages:
         model.messages.append(evt)
     return model
@@ -51,7 +54,34 @@ def attach_events(model: Model, messages: list[Message[Metadata]]) -> Model:
         pytest.param(
             attach_events(Foo(name="joe"), [FooCreated(name="joe")]),
             "<Foo name='joe' messages=[<FooCreated name='joe'>]>",
-            id="with messages"
+            id="with messages",
+        ),
+        pytest.param(
+            BigMessage(name="fatjoe"),
+            "<BigMessage name='fatjoe'>",
+            id="unset attr",
+        ),
+        pytest.param(
+            BigMessage(name="fatjoe", eta=None),
+            "<BigMessage name='fatjoe' eta=None>",
+            id="none attr",
+        ),
+        pytest.param(
+            attach_events(
+                BigMessage(name="fatjoe"),
+                [BigMessageCreated(name="fatjoe")],
+            ),
+            "<BigMessage name='fatjoe' messages=[<BigMessageCreated name='fatjoe'>]>",
+            id="unset attr with evt",
+        ),
+        pytest.param(
+            attach_events(
+                BigMessage(name="fatjoe", eta=None),
+                [BigMessageCreated(name="fatjoe", eta=None)],
+            ),
+            "<BigMessage name='fatjoe' eta=None "
+            "messages=[<BigMessageCreated name='fatjoe' eta=None>]>",
+            id="none attr with evt",
         ),
     ],
 )

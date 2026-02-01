@@ -38,9 +38,13 @@ class Message(BaseModel, Generic[TMetadata]):
     """
 
     def __repr__(self) -> str:
-        slf = self.model_dump(exclude={"message_id", "created_at", "metadata"})
-        attrs = [f"{key}={val!r}" for key, val in slf.items()]
-        return f"<{self.__class__.__name__} {' '.join(attrs)}>"
+        attrs = [
+            f"{key}={getattr(self, key)!r}"
+            if key not in {"message_id", "created_at", "metadata"}
+            else None
+            for key in self.__class__.model_fields.keys()
+        ]
+        return f"<{self.__class__.__name__} {' '.join(filter(None, attrs))}>"
 
     def __eq__(self, other: Any) -> bool:
         """

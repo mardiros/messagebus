@@ -38,7 +38,9 @@ class Message(BaseModel, Generic[TMetadata]):
     """
 
     def __repr__(self) -> str:
-        slf = self.model_dump(exclude={"message_id", "created_at", "metadata"})
+        slf = self.model_dump(
+            exclude={"message_id", "created_at", "metadata"}, exclude_unset=True
+        )
         attrs = [f"{key}={val!r}" for key, val in slf.items()]
         return f"<{self.__class__.__name__} {' '.join(attrs)}>"
 

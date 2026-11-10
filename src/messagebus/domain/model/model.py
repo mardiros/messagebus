@@ -28,10 +28,10 @@ class GenericModel(BaseModel, Generic[TMetadata]):
     """
 
     def __repr__(self) -> str:
-        slf = self.model_dump(exclude={"messages"})
+        slf = self.model_dump(exclude={"messages"}, exclude_unset=True)
         attrs = [f"{key}={val!r}" for key, val in slf.items()]
         if self.messages:
-            attrs.append(f"message={self.messages!r}")
+            attrs.append(f"messages={self.messages!r}")
         return f"<{self.__class__.__name__} {' '.join(attrs)}>"
 
     def __eq__(self, other: Any) -> bool:

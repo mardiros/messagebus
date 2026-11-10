@@ -1,4 +1,9 @@
-from messagebus import Event, Metadata, Model
+from datetime import datetime
+
+import pytest
+
+from messagebus import Event, Field, Message, Metadata, Model
+from messagebus.typing import TMessage
 
 
 class Foo(Model):
@@ -19,14 +24,39 @@ class BarCreated(Event):
     metadata: Metadata = Metadata(name="bar_created", schema_version=1)
 
 
-def test_model_repr():
-    assert repr(Foo(name="joe")) == "<Foo name='joe'>"
+class BigMessage(Model):
+    name: str
+    eta: datetime | None = Field(default=None)
 
 
-def test_model_repr_with_messages():
-    foo = Foo(name="joe")
-    foo.messages.append(FooCreated(name="joe"))
-    assert repr(foo) == "<Foo name='joe' message=[<FooCreated name='joe'>]>"
+class BigMessageCreated(Model):
+    name: str
+    eta: datetime | None = Field(default=None)
+    metadata: Metadata = Metadata(name="big_message_created", schema_version=1)
+
+
+def attach_events(model: Model, messages: list[Message[Metadata]]) -> Model:
+    for evt in messages:
+        model.messages.append(evt)
+    return model
+
+
+@pytest.mark.parametrize(
+    "obj,expected",
+    [
+        pytest.param(
+            Foo(name="joe"),
+            "<Foo name='joe'>",
+        ),
+        pytest.param(
+            attach_events(Foo(name="joe"), [FooCreated(name="joe")]),
+            "<Foo name='joe' messages=[<FooCreated name='joe'>]>",
+            id="with messages"
+        ),
+    ],
+)
+def test_model_repr(obj: Model, expected: str):
+    assert repr(obj) == expected
 
 
 def test_model_equal():

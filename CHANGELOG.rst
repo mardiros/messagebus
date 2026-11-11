@@ -1,3 +1,8 @@
+0.16.2  - Released on 2026-11-11
+--------------------------------
+* Add support of python 3.14 and 3.15.
+* Drop support of python 3.10.
+
 0.16.1  - Released on 2026-01-28
 --------------------------------
 * Upgrade tamahagane. 

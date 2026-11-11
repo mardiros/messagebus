@@ -13,13 +13,13 @@ class Metadata(BaseModel):
     Every message, commands and event have metadata used and sends while serialization.
     """
 
-    name: str = Field(...)
+    name: str = Field()
     """
     Name of the schema.
 
     Identity a message type when serialization..
     """
-    schema_version: int = Field(...)
+    schema_version: int = Field()
     """
     Version of the schema.
 

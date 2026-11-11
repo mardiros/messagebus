@@ -1,3 +1,5 @@
+from typing import Any
+
 from messagebus import AsyncAbstractUnitOfWork
 from reading_club.service.repositories import (
     AbstractBookRepository,
@@ -7,7 +9,7 @@ from reading_club.service.repositories import (
 )
 
 
-class AbstractUnitOfWork(AsyncAbstractUnitOfWork[Repositories]):
+class AbstractUnitOfWork(AsyncAbstractUnitOfWork[Repositories, Any, Any]):
     books: AbstractBookRepository
     reviewers: AbstractReviewerRepository
     reviews: AbstractReviewRepository

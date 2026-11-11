@@ -34,10 +34,7 @@ lint:
 
 fmt:
     uv run ruff check --fix .
-    uv run ruff format src tests
-
-black: fmt
-    echo "$(tput setaf 3)Warning: Use 'just fmt' instead$(tput setaf 7)"
+    uv run ruff format src tests examples
 
 typecheck:
     uv run mypy src/messagebus/ tests/

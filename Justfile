@@ -61,7 +61,7 @@ changelog:
     $EDITOR CHANGELOG.rst
 
 publish:
-    git commit -am "Release $(uv version --short)"
+    git commit -am "Release $(uv version --short --no-color)"
     git push
-    git tag "v$(uv version --short)"
-    git push origin "v$(uv version --short)"
+    git tag "v$(uv version --short --no-color)"
+    git push origin "v$(uv version --short --no-color)"

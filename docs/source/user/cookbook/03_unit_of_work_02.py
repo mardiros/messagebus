@@ -1,5 +1,5 @@
-from reading_club.service.repositories import AbstractBookRepository
-from reading_club.service.uow import AbstractUnitOfWork
+from reading_club.ports.repositories import AbstractBookRepository
+from reading_club.ports.uow import AbstractUnitOfWork
 
 
 class InMemoryBookRepository(AbstractBookRepository):

@@ -4,14 +4,14 @@ from uuid import UUID
 
 import pytest
 from reading_club.domain.model import Book
-from reading_club.service.repositories import (
+from reading_club.ports.repositories import (
     AbstractBookRepository,
     AsyncAbstractMessageStoreRepository,
     BookRepositoryError,
     BookRepositoryOperationResult,
     BookRepositoryResult,
 )
-from reading_club.service.uow import AbstractUnitOfWork
+from reading_club.ports.uow import AbstractUnitOfWork
 from result import Err, Ok
 
 from messagebus import (

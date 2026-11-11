@@ -1,7 +1,7 @@
 from typing import Any
 
 from messagebus import AsyncAbstractUnitOfWork
-from reading_club.service.repositories import (
+from reading_club.ports.repositories import (
     AbstractBookRepository,
     AbstractReviewerRepository,
     AbstractReviewRepository,

@@ -10,7 +10,7 @@ from messagebus import AsyncMessageBus
 # for performance reason, we reuse the bus here,
 # the scan operation is slowing down while repeated
 _bus: AsyncMessageBus[Any] = AsyncMessageBus()
-_bus.scan("reading_club.service.handlers")
+_bus.scan("reading_club.service_handlers")
 
 
 @pytest.fixture

@@ -1,6 +1,6 @@
 from reading_club.adapters.uow_sqla.uow import SQLUnitOfWork
 from reading_club.domain.model import Book
-from reading_club.service.repositories import BookRepositoryError
+from reading_club.ports.repositories import BookRepositoryError
 
 
 async def test_book_by_id_ok(uow: SQLUnitOfWork, book: Book):

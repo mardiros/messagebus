@@ -1,12 +1,12 @@
 from types import TracebackType
 
 from reading_club.domain.model import Book
-from reading_club.service.repositories import (
+from reading_club.ports.repositories import (
     AbstractBookRepository,
     BookRepositoryOperationResult,
     BookRepositoryResult,
 )
-from reading_club.service.uow import AbstractUnitOfWork
+from reading_club.ports.uow import AbstractUnitOfWork
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from messagebus import (

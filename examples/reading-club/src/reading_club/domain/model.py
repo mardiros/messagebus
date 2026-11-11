@@ -1,23 +1,23 @@
-from uuid import UUID
-
 from messagebus import Field, Model
+
+from .types import BookId, ReviewerId, ReviewId
 
 
 class Book(Model):
-    id: UUID = Field(...)
-    title: str = Field(...)
-    author: str = Field(...)
-    isbn: str = Field(...)
+    id: BookId = Field()
+    title: str = Field()
+    author: str = Field()
+    isbn: str = Field()
 
 
 class Reviewer(Model):
-    id: UUID = Field(...)
-    nickname: str = Field(...)
+    id: ReviewerId = Field()
+    nickname: str = Field()
 
 
 class Review(Model):
-    id: UUID = Field(...)
-    reviewer_id: str = Field(...)
-    book_id: str = Field(...)
+    id: ReviewId = Field()
+    reviewer_id: ReviewerId = Field()
+    book_id: BookId = Field()
     rate: int = Field(ge=0, le=10)
-    comment: str = Field(...)
+    comment: str = Field()

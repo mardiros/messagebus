@@ -13,20 +13,20 @@ class MyMetadata(Metadata):
 
 
 class DummyCommand(GenericCommand[MyMetadata]):
-    id: str = Field(...)
+    id: str = Field()
     metadata: MyMetadata = MyMetadata(
         name="dummy", schema_version=1, custom_field="foo"
     )
 
 
 class AnotherDummyCommand(GenericCommand[MyMetadata]):
-    id: str = Field(...)
+    id: str = Field()
     metadata: MyMetadata = MyMetadata(name="dummy2", schema_version=1, custom_field="f")
 
 
 class DummyEvent(GenericEvent[MyMetadata]):
-    id: str = Field(...)
-    increment: int = Field(...)
+    id: str = Field()
+    increment: int = Field()
     metadata: MyMetadata = MyMetadata(
         name="dummied", schema_version=1, published=True, custom_field="foo"
     )

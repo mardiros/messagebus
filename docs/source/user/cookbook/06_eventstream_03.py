@@ -6,13 +6,13 @@ import pytest
 from lastuuid.dummies import uuidgen
 from reading_club.domain.messages import RegisterBook
 from reading_club.domain.model import Book
-from reading_club.service.repositories import (
+from reading_club.ports.repositories import (
     AbstractBookRepository,
     BookRepositoryError,
     BookRepositoryOperationResult,
     BookRepositoryResult,
 )
-from reading_club.service.uow import AbstractUnitOfWork
+from reading_club.ports.uow import AbstractUnitOfWork
 from result import Err, Ok
 
 from messagebus import (
@@ -96,7 +96,7 @@ def uow(transport: AsyncAbstractEventstreamTransport) -> Iterator[InMemoryUnitOf
 # for performance reason, we reuse the bus here,
 # the scan operation is slowing down while repeated
 _bus = AsyncMessageBus()
-_bus.scan("reading_club.service.handlers")
+_bus.scan("reading_club.service_handlers")
 
 
 @pytest.fixture

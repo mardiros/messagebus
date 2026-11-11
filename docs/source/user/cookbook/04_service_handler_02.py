@@ -1,9 +1,9 @@
 from lastuuid.dummies import uuidgen
 from reading_club.domain.messages import RegisterBook
 from reading_club.domain.model import Book
-from reading_club.service.handlers.book import register_book
-from reading_club.service.repositories import BookRepositoryError
-from reading_club.service.uow import AbstractUnitOfWork
+from reading_club.ports.repositories import BookRepositoryError
+from reading_club.ports.uow import AbstractUnitOfWork
+from reading_club.service_handlers.book import register_book
 
 
 async def test_register_book(register_book_cmd: RegisterBook, uow: AbstractUnitOfWork):

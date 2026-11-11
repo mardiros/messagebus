@@ -2,7 +2,7 @@ from typing import ClassVar
 from uuid import UUID
 
 from reading_club.domain.model import Book
-from reading_club.service.repositories import (
+from reading_club.ports.repositories import (
     AbstractBookRepository,
     BookRepositoryError,
     BookRepositoryOperationResult,

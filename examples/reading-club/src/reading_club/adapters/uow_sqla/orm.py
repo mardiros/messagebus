@@ -1,4 +1,6 @@
-from sqlalchemy import JSON, Column, DateTime, Index, MetaData, String, Table, Uuid
+from sqlalchemy import JSON, Column, Index, MetaData, String, Table, Uuid
+
+from .helpers import TZAwareDateTime
 
 metadata = MetaData()
 
@@ -18,7 +20,7 @@ messages = Table(
     "messages",
     metadata,
     Column("id", Uuid(), nullable=False, primary_key=True),
-    Column("created_at", DateTime(timezone=True), nullable=False),
+    Column("created_at", TZAwareDateTime(timezone=True), nullable=False),
     Column("metadata", JSON(), nullable=False),
     Column("payload", JSON(), nullable=False),
     Index("idx_messages_created_at", "created_at"),

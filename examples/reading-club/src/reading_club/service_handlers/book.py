@@ -1,8 +1,8 @@
 from messagebus import async_listen
 from reading_club.domain.messages import BookRegistered, RegisterBook
 from reading_club.domain.model import Book
-from reading_club.service.repositories import BookRepositoryOperationResult
-from reading_club.service.uow import AbstractUnitOfWork
+from reading_club.ports.repositories import BookRepositoryOperationResult
+from reading_club.ports.uow import AbstractUnitOfWork
 
 
 @async_listen

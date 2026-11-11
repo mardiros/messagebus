@@ -1,6 +1,6 @@
 from reading_club.domain.messages import RegisterBook
 from reading_club.domain.model import Book
-from reading_club.service.repositories import BookRepositoryOperationResult
+from reading_club.ports.repositories import BookRepositoryOperationResult
 
 from messagebus import AsyncUnitOfWorkTransaction, async_listen
 

@@ -21,7 +21,7 @@ cleandoc:
 gensync: && fmt
     uv run python scripts/gen_unasync.py
 
-test: gensync typecheck lint unittest
+test: gensync typecheck lint unittest examplestest
 
 lf:
     uv run pytest -sxvvv --lf
@@ -29,15 +29,15 @@ lf:
 unittest test_suite=default_test_suite:
     uv run pytest -sxv {{test_suite}}
 
+examplestest:
+    cd examples/reading-club && uv run pytest -sxv
+
 lint:
     uv run ruff check .
 
 fmt:
     uv run ruff check --fix .
-    uv run ruff format src tests
-
-black: fmt
-    echo "$(tput setaf 3)Warning: Use 'just fmt' instead$(tput setaf 7)"
+    uv run ruff format src tests examples
 
 typecheck:
     uv run mypy src/messagebus/ tests/
